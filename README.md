@@ -9,7 +9,7 @@ has the same complexity as that of the 'tree' package in R.
 
 To install clone the repository and outside the qtree folder run 'R CMD INSTALL qtree'.
 
-Run times of tree vs qtree(tau=0.5) on CT-slices dataset (384 variables, default settings):
+Run times of tree vs qtree(tau=0.5) on CT-slices (UCI) dataset (384 variables, default settings):
 
 N:
 
