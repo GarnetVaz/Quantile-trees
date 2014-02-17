@@ -1,0 +1,2 @@
+useDynLib(qtree)
+exportPattern("^[[:alpha:]]+")
