@@ -11,6 +11,7 @@ white <- read.csv('./winequality/winequality-white.csv',sep=';',header=TRUE)
 red <- read.csv('./winequality/winequality-red.csv',sep=';',header=TRUE)
 form <- as.formula(quality ~ .)
 
+## Note that the meaning of minsize and mincut is flipped from the 'tree' package.
 mod.white.qtree <- qtree(form, data = white, mindev = 0.001, minsize = 2, mincut = 4, tau = 0.5)
 mod.red.qtree <- qtree(form, data = red, mindev = 0.001, minsize = 2, mincut = 4, tau = 0.5)
 
