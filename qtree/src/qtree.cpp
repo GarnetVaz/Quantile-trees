@@ -35,10 +35,10 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   double *qpt = qd;
   getLeftQad(ypt, qpt, tau, ys.n_elem, quant);
   getRightQad(ypt, qpt, tau, ys.n_elem);
-  double min = qad(minSize);
+  double min = qpt[minSize];
   for(unsigned int i=minSize+1;  i<n; ++i) {
-    if((qad(i) < min) && xis(i-1) < xis(i)) {
-      min = qad(i);
+    if((qpt[i] < min) && xis(i-1) < xis(i)) {
+      min = qpt[i];
       minInd = i;
     }
   }
@@ -125,7 +125,6 @@ void getLeftQad(const double *ys, double *qd,
 
 void getRightQad(const double *ys, double *qd,
 		 const double tau, const uint ylen) {
-// void getRightQad(const arma::vec& ys,  const double tau, arma::vec& qad) {
   minHeap low;
   maxHeap high;
   const double *ypt = ys+ylen-1;
@@ -147,7 +146,7 @@ void getRightQad(const double *ys, double *qd,
   qadp = qadr = 0.0;
   qpt -= 2;
   ypt--;
-  for(int ii=ylen-1; ii > 0; --ii, --ypt, --qpt) {
+  for(int ii=ylen-1; ii > 0;--ypt, --qpt) {
     nlold = nl;
     nrold = nr;
     qadp = qadr;
