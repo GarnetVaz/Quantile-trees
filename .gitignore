@@ -3,5 +3,5 @@
 .Rhistory
 *zip
 *tar.gz
-*.o
-*.so
+*o
+*so
