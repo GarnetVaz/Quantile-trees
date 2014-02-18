@@ -35,13 +35,13 @@ crossValidate <- function(dat, formula, folds) {
         test <- dat[folds[[i]],]
         ## Build qtree model
         mod.qtree <- qtree(formula, data = train,
-                           mindev = 0.01, mincut = 10, minsize = 5,tau=0.5)
+                           mindev = 0.001, mincut = 10, minsize = 5,tau=0.5)
         mod.predict.qtree <- predict(mod.qtree, newdata = test)
         errorQtreeLAD[i] <- computeLAD(test[,dim(test)[2]], mod.predict.qtree)
         errorQtreeMSD[i] <- computeMSD(test[,dim(test)[2]], mod.predict.qtree)
         ## Build tree model
         mod.tree <- tree(formula, data = train,
-                         mindev = 0.01, mincut = 5, minsize = 10)
+                         mindev = 0.001, mincut = 5, minsize = 10)
         mod.predict.tree <- predict(mod.tree, newdata = test)
         errorTreeLAD[i] <- computeLAD(test[,dim(test)[2]], mod.predict.tree)
         errorTreeMSD[i] <- computeMSD(test[,dim(test)[2]], mod.predict.tree)

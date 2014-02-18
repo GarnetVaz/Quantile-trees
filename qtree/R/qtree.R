@@ -1,14 +1,14 @@
 require('tree')                         # ensures that printing and prediction works.
 qtree <- function (formula,
-                           data,
-                           mindev=0.01,
-                           mincut=10,
-                           minsize=5,
-                           tau=0.5,
-                           na.action = na.pass,
-                           model = FALSE,
-                           x = FALSE,y = TRUE,
-                           wts = TRUE,...)
+                   data,
+                   mindev=0.01,
+                   mincut=10,
+                   minsize=5,
+                   tau=0.5,
+                   na.action = na.pass,
+                   model = FALSE,
+                   x = FALSE,y = TRUE,
+                   wts = TRUE,...)
 {
 
 	if (is.data.frame(model)){
