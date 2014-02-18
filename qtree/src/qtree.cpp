@@ -2,11 +2,9 @@
 
 #include<algorithm>
 #include<queue>
-#include<iostream>
 #include<vector>
 #include<functional>
 #include<cmath>
-#include<iomanip>
 
 using namespace std;
 
@@ -206,7 +204,7 @@ ourVector myfun(arma::uvec& indices,
     output.empty = false;
     output.quantile = y(0) + (y(1) - y(0))*(tau);
     output.sold = 0.0;
-    cout << "used weird case" << endl;
+    // cout << "used weird case" << endl;
     return output;
   }
 
