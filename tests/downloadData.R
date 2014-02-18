@@ -13,8 +13,8 @@ data.dir <- paste(cur.dir,'/qtree_datasets',sep='')
 if(!file.exists(data.dir)) {
     ## Download the wine dataset from http://www3.dsi.uminho.pt/pcortez/wine/
     wine.url <- 'http://www3.dsi.uminho.pt/pcortez/wine/winequality.zip'
-    download.file(url=url,destfile='./qtree_datasets/winequality.zip')
-    unzip('qtree_datasets/winequality.zip')
+    download.file(url=wine.url,destfile='./winequality.zip')
+    unzip('./winequality.zip')
     whitewine.loc <- './winequality/winequality-white.csv'
     whitewine.save.loc <- './qtree_datasets/wine-quality-white.RData'
     redwine.loc <- './winequality/winequality-red.csv'
@@ -26,8 +26,8 @@ if(!file.exists(data.dir)) {
 
     ## Download the communities and crime dataset from UCI database.
     crime.url <- 'http://archive.ics.uci.edu/ml/machine-learning-databases/communities/communities.data'
-    download.file(url=crime.url,destfile='./qtree_datasets/crime.data')
-    crime.alldata <- read.table('./qtree_datasets/crime.data',sep=',',na.strings='?')
+    download.file(url=crime.url,destfile='./crime.data')
+    crime.alldata <- read.table('./crime.data',sep=',',na.strings='?')
     ## Eliminate columns with NA
     na.cols <- (sapply(crime.alldata, function(x) sum(is.na(x))) > 0)
     na.cols[1:4] <- TRUE                    # Categorical variables
@@ -37,5 +37,12 @@ if(!file.exists(data.dir)) {
     save(crime.data,file=crime.save.loc)
 
     ## Clean up
-    file.remove('winequality')
+    wine.files <- list.files('./winequality')
+    for (i in wine.files) {
+        fname <- paste('./winequality',i,sep="/")
+        file.remove(fname)
+    }
+    file.remove('./winequality')
+    file.remove('./winequality.zip')
+    file.remove('./crime.data')
 }
