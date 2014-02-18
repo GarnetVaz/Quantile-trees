@@ -31,9 +31,10 @@ The package relies on the Armadillo C++ library installed through 'RcppArmadillo
 is very similar to the 'tree' class and hence the same predict function is used.
 
 Todo:
-* Add test datasets (download and run ability)
 * Categorical variables handling.
 * Surrogate variables computation.
+* Bagged trees
+* LAD random forest implementation.
 
 
 NOTE: The following code has only been tested on Ubuntu 12.04 with GCC/G++ 4.7.3
