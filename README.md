@@ -34,3 +34,6 @@ Todo:
 * Add test datasets (download and run ability)
 * Categorical variables handling.
 * Surrogate variables computation.
+
+
+NOTE: The following code has only been tested on Ubuntu 12.04 with GCC/G++ 4.7.3
