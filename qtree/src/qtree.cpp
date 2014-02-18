@@ -17,7 +17,7 @@ void getRightQad(const arma::vec& ys, const double tau, arma::vec& qad);
 void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const double tau, uint minSize, double& cut, double& minQad, double& quant) {
   qad.zeros();
   arma::uvec xsortix = arma::sort_index(xs);
-  double TOL = 1.e-12;
+  // double TOL = 1.e-12;
   unsigned int minInd = minSize;
   unsigned int n = qad.n_elem - minSize;
   arma::vec xis = xs.elem(xsortix);
@@ -26,7 +26,8 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   getRightQad(ys, tau, qad);
   double min = qad(minSize);
   for(unsigned int i=minSize+1;  i<n; ++i) {
-    if((qad(i) < min) && (abs(xis(i-1) - xis(i)) > TOL)) {
+    if((qad(i) < min) && xis(i-1) < xis(i)) {
+    // if((qad(i) < min) && (abs(xis(i-1) - xis(i)) > TOL)) {
       min = qad(i);
       minInd = i;
     }
