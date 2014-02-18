@@ -11,8 +11,11 @@ using namespace std;
 typedef priority_queue< double, vector<double> > minHeap;
 typedef priority_queue< double, vector<double>, std::greater<double> > maxHeap;
 
-void getLeftQad(const double *ys, const double tau, uint ylen,
-		arma::vec& qad, double& quant);
+void getLeftQad(const double *ys, double *qd,
+		const double tau, uint ylen,
+		double& quant);
+void getRightQad(const double *ys, double *qd,
+		 const double tau, uint ylen);
 
 // void getLeftQad(const arma::vec& ys, const double tau, arma::vec& qad, double& quant);
 void getRightQad(const arma::vec& ys, const double tau, arma::vec& qad);
@@ -20,22 +23,21 @@ void getRightQad(const arma::vec& ys, const double tau, arma::vec& qad);
 void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const double tau, uint minSize, double& cut, double& minQad, double& quant) {
   qad.zeros();
   arma::uvec xsortix = arma::sort_index(xs);
-  // double TOL = 1.e-12;
   unsigned int minInd = minSize;
   unsigned int n = qad.n_elem - minSize;
   arma::vec xis = xs.elem(xsortix);
   arma::vec ys = yvals.elem(xsortix);
 
   double *y = new double[ys.n_elem];
-  for(int i=0; i<ys.n_elem; ++i) y[i] = ys.at(i);
-
-  getLeftQad(y, tau, ys.n_elem, qad, quant);
-  // getLeftQad(ys, tau, qad, quant);
-  getRightQad(ys, tau, qad);
+  double *ypt = y;
+  for(unsigned int i=0; i<ys.n_elem; ++i) y[i] = ys.at(i);
+  double *qd = new double[qad.n_elem];
+  double *qpt = qd;
+  getLeftQad(ypt, qpt, tau, ys.n_elem, quant);
+  getRightQad(ypt, qpt, tau, ys.n_elem);
   double min = qad(minSize);
   for(unsigned int i=minSize+1;  i<n; ++i) {
     if((qad(i) < min) && xis(i-1) < xis(i)) {
-    // if((qad(i) < min) && (abs(xis(i-1) - xis(i)) > TOL)) {
       min = qad(i);
       minInd = i;
     }
@@ -44,23 +46,22 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   minQad = min;
 
   delete[] y;
+  delete[] qd;
 
 }
 
-void getLeftQad(const double *ys, const double tau, uint ylen,
-		arma::vec& qad, double& quant) {
-// void getLeftQad(const arma::vec& ys, const double tau,
-// 		arma::vec& qad, double& quant) {
+void getLeftQad(const double *ys, double *qd,
+		const double tau, uint ylen,
+		double& quant) {
   minHeap low;
   maxHeap high;
   double first = *ys;
-  // double first = ys[0];
   low.push(first);
   double qp, qr; 	// Quantile based value here. Name might be misleading.
   qp = first;
   qr = 0.0;
-  qad[0] = 0.0;
-  qad[1] = 0.0; 		// qad[0] = 0 also since there are no elements.
+  *qd++ = 0.0;
+  *qd++ = 0.0;
   int nl, nr, nn;		// nn = total points, nl = points in left
   int nlold, nrold;
   nn = 1;
@@ -71,23 +72,16 @@ void getLeftQad(const double *ys, const double tau, uint ylen,
   double s, l;
   int test;			// Used to test a shift from one heap to another.
 
-  arma::vec::iterator qadIt=qad.begin()+2;
-  // const double *ss = ys + 1;
   ys++;
-  for(int ii = 1; ii < ylen; ++ii, ys++) {
-  // for(arma::vec::const_iterator it=ys.begin()+1; it!=ys.end(); ++it) {
+  for(unsigned int ii = 1; ii < ylen; ++ii, ys++, qd++) {
     nlold = nl;
     nrold = nr;
     k = i = j = 0.;
-    // s = *it;
     if(*ys <= low.top()) {
-    // if(s <= low.top()) {
-      // low.push(s);
       low.push(*ys);
       k = 1.;
       nl++;
     } else {
-      // high.push(s);
       high.push(*ys);
       nr++;
     }
@@ -119,11 +113,8 @@ void getLeftQad(const double *ys, const double tau, uint ylen,
     qr = low.top() + (high.top()-low.top())*(tau*((double)nn -1.) -((double)test-1.));
 
     // Get new QAD from old one.
-    *qadIt = *(qadIt-1) + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
+    *qd = *(qd-1) + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
       + i*j*(l-qr) + k*(tau-1.)*(*ys-qr) + (1.-k)*tau*(*ys-qr);
-    // *qadIt = *(qadIt-1) + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
-    //   + i*j*(l-qr) + k*(tau-1.)*(s-qr) + (1.-k)*tau*(s-qr);
-    qadIt++;
 
     // Do updates
     qp = qr;
@@ -132,10 +123,14 @@ void getLeftQad(const double *ys, const double tau, uint ylen,
 
 }
 
-void getRightQad(const arma::vec& ys,  const double tau, arma::vec& qad) {
+void getRightQad(const double *ys, double *qd,
+		 const double tau, const uint ylen) {
+// void getRightQad(const arma::vec& ys,  const double tau, arma::vec& qad) {
   minHeap low;
   maxHeap high;
-  double last = ys(ys.n_elem-1);
+  const double *ypt = ys+ylen-1;
+  double *qpt = qd+ylen+1;
+  double last = *ypt;
   low.push(last);
   double qp, qr;
   qp = last;
@@ -150,19 +145,19 @@ void getRightQad(const arma::vec& ys,  const double tau, arma::vec& qad) {
   int test;			// Used to test a shift from one heap to another.
   double qadp, qadr;
   qadp = qadr = 0.0;
-  arma::vec::iterator qadIt=qad.end()-3; // Leave the last two out.
-  for(arma::vec::const_iterator it=ys.end()-2; it!=ys.begin()-1; --it) {
+  qpt -= 2;
+  ypt--;
+  for(int ii=ylen-1; ii > 0; --ii, --ypt, --qpt) {
     nlold = nl;
     nrold = nr;
     qadp = qadr;
     k = i = j = 0.;
-    s = *it;
-    if(s <= low.top()) {
-      low.push(s);
+    if(*ypt <= low.top()) {
+      low.push(*ypt);
       k = 1.;
       nl++;
     } else {
-      high.push(s);
+      high.push(*ypt);
       nr++;
     }
     ++nn;
@@ -194,8 +189,8 @@ void getRightQad(const arma::vec& ys,  const double tau, arma::vec& qad) {
 
     // Get new QAD from old one.
     qadr = qadp + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
-      + i*j*(l-qr) + k*(tau-1.)*(s-qr) + (1.-k)*tau*(s-qr);
-    *qadIt-- += qadr;
+      + i*j*(l-qr) + k*(tau-1.)*(*ypt-qr) + (1.-k)*tau*(*ypt-qr);
+    *qpt += qadr;
 
     // Do updates
     qp = qr;
