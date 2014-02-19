@@ -46,10 +46,10 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   for(int i=0; i<qad.n_elem; ++i) cout << qd[i] << endl;
   cout << "after both" << endl;
 
-  double min = qpt[minSize];
+  double min = qd[minSize];
   for(unsigned int i=minSize+1;  i<n; ++i) {
-    if((qpt[i] < min) && xis(i-1) < xis(i)) {
-      min = qpt[i];
+    if((qd[i] < min) && xis(i-1) < xis(i)) {
+      min = qd[i];
       minInd = i;
     }
   }
