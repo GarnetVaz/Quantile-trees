@@ -5,7 +5,7 @@
 #include<vector>
 #include<functional>
 #include<cmath>
-#include<iostream>
+
 using namespace std;
 
 typedef priority_queue< double, vector<double> > minHeap;
@@ -16,9 +16,6 @@ void getLeftQad(const double *ys, double *qd,
 		double& quant);
 void getRightQad(const double *ys, double *qd,
 		 const double tau, uint ylen);
-
-// void getLeftQad(const arma::vec& ys, const double tau, arma::vec& qad, double& quant);
-void getRightQad(const arma::vec& ys, const double tau, arma::vec& qad);
 
 void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const double tau, uint minSize, double& cut, double& minQad, double& quant) {
   qad.zeros();
@@ -45,7 +42,7 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
       minInd = i;
     }
   }
-  cout << qad << endl;
+
   cut = 0.5*(xis(minInd-1) + xis(minInd));
   minQad = min;
 
