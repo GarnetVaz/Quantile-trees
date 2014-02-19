@@ -56,10 +56,12 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   minQad = min;
 
   for(unsigned int i = 0; i<qad.n_elem; ++i) qad(i) = *(qd+i);
-  delete[] y;
-  delete[] qd;
-  delete[] x;
-  delete[] index;
+  // ypt = qpt = NULL;
+  // delete[] y;
+  // delete[] qd;
+  // delete[] x;
+  // delete[] index;
+  cout << "going out of qad" << endl;
 }
 
 void getLeftQad(const double *ys, double *qd,
