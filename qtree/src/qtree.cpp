@@ -70,8 +70,7 @@ void getLeftQad(const double *ys, double *qd,
   nlold = nl = 1;
   nrold = nr = 0;
 
-  double k, i, j;
-  double s, l;
+  double k, i, j, l;
   int test;			// Used to test a shift from one heap to another.
 
   ys++;
@@ -141,8 +140,7 @@ void getRightQad(const double *ys, double *qd,
   nn = 1;
   nlold = nl = 1;
   nrold = nr = 0;
-  double k, i, j;
-  double s, l;
+  double k, i, j, l;
   int test;			// Used to test a shift from one heap to another.
   double qadp, qadr;
   qadp = qadr = 0.0;
@@ -270,11 +268,7 @@ ourVector myfun(arma::uvec& indices,
 void getQuantileAndQAD(const arma::vec& ys, double& quant, double& qad, const double tau) {
   if(ys.n_elem == 1) {
     qad = 0.0;
-<<<<<<< HEAD
     quant = ys(0);
-=======
-    qad = ys(0);
->>>>>>> noarma
     return;
   }
   arma::vec sorty = arma::sort(ys);

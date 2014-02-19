@@ -1,10 +1,6 @@
 #!/usr/bin/env R
 ## Small test case
 set.seed(1)
-<<<<<<< HEAD
-
-=======
->>>>>>> noarma
 library('tree')
 library('qtree')
 ## Simple dataset
@@ -19,8 +15,6 @@ y <- y + rnorm(5)
 data.simple <- data.frame(x1,x2,y)
 
 mod.data <- qtree(y ~ ., data = data.simple, tau = 0.5, minsize = 1, mincut = 2)
-<<<<<<< HEAD
-=======
 
 ## arma output:
 ## 1) root 5 9.1090 -0.6212
@@ -35,4 +29,3 @@ mod.data <- qtree(y ~ ., data = data.simple, tau = 0.5, minsize = 1, mincut = 2)
 ##   3) x1 > 3.17400735590602 3  7.1700  2.3900
 ##     6) x1 < 8.46239428697658 2  5.3680  7.7570 *
 ##     7) x1 > 8.46239428697658 1 -1.2150  7.7570 *
->>>>>>> noarma
