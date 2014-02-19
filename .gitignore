@@ -5,3 +5,5 @@
 *tar.gz
 *o
 *so
+/qtree/src/qtree.o
+/qtree/src/qtree.so
