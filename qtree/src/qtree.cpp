@@ -5,6 +5,7 @@
 #include<vector>
 #include<functional>
 #include<cmath>
+#include<iostream>
 
 using namespace std;
 
@@ -34,7 +35,11 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   double *qd = new double[qad.n_elem];
   double *qpt = qd;
   getLeftQad(ypt, qpt, tau, ys.n_elem, quant);
+  ypt = y;
+  qpt = qd;
   getRightQad(ypt, qpt, tau, ys.n_elem);
+  for(int i=0; i<qad.n_elem; ++i) cout << qd[i] << endl;
+  cout << endl;
   double min = qpt[minSize];
   for(unsigned int i=minSize+1;  i<n; ++i) {
     if((qpt[i] < min) && xis(i-1) < xis(i)) {

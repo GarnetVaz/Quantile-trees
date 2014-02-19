@@ -1,7 +1,7 @@
 #!/usr/bin/env R
 ## Small test case
 set.seed(1)
-
+library('tree')
 library('qtree')
 ## Simple dataset
 x1 <- c(2,4,3,7,8)
