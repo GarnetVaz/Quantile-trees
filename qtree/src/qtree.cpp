@@ -155,7 +155,7 @@ void getRightQad(const double *ys, double *qd,
   int test;			// Used to test a shift from one heap to another.
   double qadp, qadr;
   qadp = qadr = 0.0;
-  qpt -= 2;
+  qpt -= 3;
   ypt--;
   for(int ii=ylen-1; ii > 0; --ii, --ypt, --qpt) {
     nlold = nl;
