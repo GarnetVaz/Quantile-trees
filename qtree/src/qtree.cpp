@@ -8,7 +8,7 @@
 #include<vector>
 #include<functional>
 #include<cmath>
-
+#include<iostream>
 using namespace std;
 
 typedef priority_queue< double, vector<double> > minHeap;
@@ -27,12 +27,15 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   double *y = new double[ylen];
   double *qd = new double[ylen+2];
   int *index = new int[ylen];
-  for(unsigned int i=0; i<xs.n_elem; ++i) {
-    x[i] = xs.at(i);
-    index[i] = i+1;
+  for(int i=0; i<ylen; ++i) {
+    x[i] = xs(i);
+    index[i] = i;
   }
-  R_qsort_I(x, index, 0, xs.n_elem);
-  for(unsigned int i=0; i<ylen; ++i) y[i] = yvals.at(index[i]-1);
+  R_qsort_I(x, index, 0, ylen);
+  int minIndex = 10000;
+  for(int i=0; i<ylen; ++i) minIndex = index[i] < minIndex ? index[i] : minIndex;
+  cout << "minIndex is " << minIndex << endl;
+  for(uint i=0; i<ylen; ++i) y[i] = yvals(index[i]);
   double *ypt = y;
   double *qpt = qd;
   unsigned int minInd = minSize;
@@ -42,7 +45,7 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   qpt = qd;
   getRightQad(ypt, qpt, tau, ylen);
   double min = *(qd+minSize);
-  for(unsigned int i=minSize+1; i < (ylen-minSize); ++i) {
+  for(unsigned int i=minSize+1; i <= (ylen-minSize); ++i) {
     if((*(qd+i) < min) && (x[i-1] < x[i])) {
       min = *(qd+i);
       minInd = i;
@@ -55,7 +58,8 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   for(unsigned int i = 0; i<qad.n_elem; ++i) qad(i) = *(qd+i);
   delete[] y;
   delete[] qd;
-
+  delete[] x;
+  delete[] index;
 }
 
 void getLeftQad(const double *ys, double *qd,
