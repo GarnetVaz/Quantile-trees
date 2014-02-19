@@ -37,9 +37,15 @@ void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const d
   getLeftQad(ypt, qpt, tau, ys.n_elem, quant);
   ypt = y;
   qpt = qd;
-  getRightQad(ypt, qpt, tau, ys.n_elem);
-  for(int i=0; i<qad.n_elem; ++i) cout << qd[i] << endl;
   cout << endl;
+  for(int i=0; i<qad.n_elem; ++i) cout << qd[i] << endl;
+  cout << "after left" << endl;
+
+  getRightQad(ypt, qpt, tau, ys.n_elem);
+  cout << endl;
+  for(int i=0; i<qad.n_elem; ++i) cout << qd[i] << endl;
+  cout << "after both" << endl;
+
   double min = qpt[minSize];
   for(unsigned int i=minSize+1;  i<n; ++i) {
     if((qpt[i] < min) && xis(i-1) < xis(i)) {
@@ -149,9 +155,9 @@ void getRightQad(const double *ys, double *qd,
   int test;			// Used to test a shift from one heap to another.
   double qadp, qadr;
   qadp = qadr = 0.0;
-  qpt -= 3;
+  qpt -= 2;
   ypt--;
-  for(int ii=ylen-2; ii > 0; --ii, --ypt, --qpt) {
+  for(int ii=ylen-1; ii > 0; --ii, --ypt, --qpt) {
     nlold = nl;
     nrold = nr;
     qadp = qadr;
