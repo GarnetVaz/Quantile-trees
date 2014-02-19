@@ -1,5 +1,8 @@
 #include "qtree.h"
 
+#include<Rmath.h>
+#include<R.h>
+
 #include<algorithm>
 #include<queue>
 #include<vector>
@@ -19,31 +22,34 @@ void getRightQad(const double *ys, double *qd,
 
 void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const double tau, uint minSize, double& cut, double& minQad, double& quant) {
   qad.zeros();
-  arma::uvec xsortix = arma::sort_index(xs);
-  unsigned int minInd = minSize;
-  unsigned int n = qad.n_elem - minSize;
-  arma::vec xis = xs.elem(xsortix);
-  arma::vec ys = yvals.elem(xsortix);
-
-  double *y = new double[ys.n_elem];
+  unsigned int ylen = yvals.n_elem;
+  double *x = new double[ylen];
+  double *y = new double[ylen];
+  double *qd = new double[ylen+2];
+  int *index = new int[ylen];
+  for(unsigned int i=0; i<xs.n_elem; ++i) {
+    x[i] = xs.at(i);
+    index[i] = i+1;
+  }
+  R_qsort_I(x, index, 0, xs.n_elem);
+  for(unsigned int i=0; i<ylen; ++i) y[i] = yvals.at(index[i]-1);
   double *ypt = y;
-  for(unsigned int i=0; i<ys.n_elem; ++i) y[i] = ys.at(i);
-  double *qd = new double[qad.n_elem];
   double *qpt = qd;
-  getLeftQad(ypt, qpt, tau, ys.n_elem, quant);
+  unsigned int minInd = minSize;
+  getLeftQad(ypt, qpt, tau, ylen, quant);
+  // Reset pointers.
   ypt = y;
   qpt = qd;
-  getRightQad(ypt, qpt, tau, ys.n_elem);
-
+  getRightQad(ypt, qpt, tau, ylen);
   double min = *(qd+minSize);
-  for(unsigned int i=minSize+1;  i<n; ++i) {
-    if((*(qd+i) < min) && (xis(i-1) < xis(i))) {
+  for(unsigned int i=minSize+1; i < (ylen-minSize); ++i) {
+    if((*(qd+i) < min) && (x[i-1] < x[i])) {
       min = *(qd+i);
       minInd = i;
     }
   }
 
-  cut = 0.5*(xis(minInd-1) + xis(minInd));
+  cut = 0.5*(x[minInd-1] + x[minInd]);
   minQad = min;
 
   for(unsigned int i = 0; i<qad.n_elem; ++i) qad(i) = *(qd+i);
