@@ -8,67 +8,55 @@
 #include<vector>
 #include<functional>
 #include<cmath>
-#include<iostream>
+
 using namespace std;
 
 typedef priority_queue< double, vector<double> > minHeap;
 typedef priority_queue< double, vector<double>, std::greater<double> > maxHeap;
 
-void getLeftQad(const double *ys, double *qd,
-		const double tau, uint ylen,
-		double& quant);
-void getRightQad(const double *ys, double *qd,
-		 const double tau, uint ylen);
+void getLeftQad(double *y, double *qad,	double tau, int ylen, double& quant);
+void getRightQad(double *y, double *qad, double tau, int ylen);
 
-void getQad(const arma::vec& xs, const arma::vec& yvals, arma::vec& qad, const double tau, uint minSize, double& cut, double& minQad, double& quant) {
-  qad.zeros();
-  unsigned int ylen = yvals.n_elem;
-  double *x = new double[ylen];
-  double *y = new double[ylen];
-  double *qd = new double[ylen+2];
-  int *index = new int[ylen];
-  for(int i=0; i<ylen; ++i) {
-    x[i] = xs(i);
-    index[i] = i;
-  }
+void getQad(double *x,
+	    double *y,
+	    double *qad,
+	    int *index,
+	    double tau,
+	    int minSize,
+	    int ylen,
+	    double cut,
+	    double minQad,
+	    double quant,
+	    int &nleft) {
   R_qsort_I(x, index, 0, ylen);
-  int minIndex = 10000;
-  for(int i=0; i<ylen; ++i) minIndex = index[i] < minIndex ? index[i] : minIndex;
-  cout << "minIndex is " << minIndex << endl;
-  for(uint i=0; i<ylen; ++i) y[i] = yvals(index[i]);
-  double *ypt = y;
-  double *qpt = qd;
-  unsigned int minInd = minSize;
-  getLeftQad(ypt, qpt, tau, ylen, quant);
-  // Reset pointers.
+  double *ypt, *qpt;
   ypt = y;
   qpt = qd;
+  getLeftQad(ypt, qpt, tau, ylen, quant);
   getRightQad(ypt, qpt, tau, ylen);
   double min = *(qd+minSize);
+  unsigned int minInd = minSize;
   for(unsigned int i=minSize+1; i <= (ylen-minSize); ++i) {
-    if((*(qd+i) < min) && (x[i-1] < x[i])) {
+    if((*(qd+i) < min) && ((*(x+i-1) < *(x+i)))) {
       min = *(qd+i);
       minInd = i;
     }
   }
-
-  cut = 0.5*(x[minInd-1] + x[minInd]);
+  cut = 0.5*(*(x+minInd-1) + *(x+minInd));
   minQad = min;
-
-  for(unsigned int i = 0; i<qad.n_elem; ++i) qad(i) = *(qd+i);
-  // ypt = qpt = NULL;
-  // delete[] y;
-  // delete[] qd;
-  // delete[] x;
-  // delete[] index;
-  cout << "going out of qad" << endl;
+  nleft = minInd;
 }
 
-void getLeftQad(const double *ys, double *qd,
-		const double tau, uint ylen,
+void getLeftQad(double *y,
+		double *qad,
+		double tau,
+		int ylen,
 		double& quant) {
   minHeap low;
   maxHeap high;
+  double *ys, *qad;
+  ys = y;
+  qd = qad;
   double first = *ys;
   low.push(first);
   double qp, qr; 	// Quantile based value here. Name might be misleading.
@@ -86,7 +74,7 @@ void getLeftQad(const double *ys, double *qd,
   int test;			// Used to test a shift from one heap to another.
 
   ys++;
-  for(unsigned int ii = 1; ii < ylen; ++ii, ys++, qd++) {
+  for(int ii = 1; ii < ylen; ++ii, ys++, qd++) {
     nlold = nl;
     nrold = nr;
     k = i = j = 0.;
@@ -136,11 +124,16 @@ void getLeftQad(const double *ys, double *qd,
 
 }
 
-void getRightQad(const double *ys, double *qd,
-		 const double tau, const uint ylen) {
+void getRightQad(double *y,
+		 double *qad,
+		 double tau,
+		 int ylen) {
   minHeap low;
   maxHeap high;
-  const double *ypt = ys+ylen-1;
+  double *ys, *qad;
+  ys = y;
+  qd = qad;
+  double *ypt = ys+ylen-1;
   double *qpt = qd+ylen+1;
   double last = *ypt;
   low.push(last);
@@ -209,57 +202,74 @@ void getRightQad(const double *ys, double *qd,
 }
 
 ourVector myfun(arma::uvec& indices,
-			 arma::vec& y,
+			 arma::vec& yvals,
 			 arma::mat& Xmat,
 			 double sroot,
 			 double mindev,
-			 double minsize,
+			 double minSize,
 			 double tau)
 {
   ourVector output;
   output.empty = true;
   double stemp = sroot;
   unsigned int indx = 0;
-  unsigned int i;
-  arma::vec Xmatcoli;
-  arma::vec qad(y.n_elem+1);
+  unsigned int i, j;
   double cut, minQad, quant;
   arma::uvec cutLeft, cutRight;
+  int nleft = 0;
   double v;
 
-  if(y.n_elem == 2) {
-    output.li = Xmat.at(0,0) < Xmat.at(0,1) ? 0 : 1;
-    output.ri = Xmat.at(0,0) < Xmat.at(0,1) ? 1 : 0;
-    output.i = 0;
-    output.val = 0.5*(Xmat.at(0,0) + Xmat(0,1));
-    output.empty = false;
-    output.quantile = y(0) + (y(1) - y(0))*(tau);
-    output.sold = 0.0;
-    // cout << "used weird case" << endl;
-    return output;
-  }
+  // if(y.n_elem == 2) {
+  //   output.li = Xmat.at(0,0) < Xmat.at(0,1) ? 0 : 1;
+  //   output.ri = Xmat.at(0,0) < Xmat.at(0,1) ? 1 : 0;
+  //   output.i = 0;
+  //   output.val = 0.5*(Xmat.at(0,0) + Xmat(0,1));
+  //   output.empty = false;
+  //   output.quantile = y(0) + (y(1) - y(0))*(tau);
+  //   output.sold = 0.0;
+  //   // cout << "used weird case" << endl;
+  //   return output;
+  // }
+  int ylen = yvals.n_elem;
+  double *x = new double[ylen];
+  double *xCopy = new double[ylen]; // Need to find cuts.
+  double *y = new double[ylen];
+  double *qd = new double[ylen+1];
+  int *index = new int[ylen];
 
-  for (i=0; i<Xmat.n_cols; i++)
-  {
+  // Copy y values over to array.
+  for(i=0; i<ylen; ++i) y[i] = yvals(i);
 
-    Xmatcoli = Xmat.col(i);
+  // Start loop over every column
+  for (i=0; i<Xmat.n_cols; i++)  {
+    // Initialize values for i'th column
+    for(j=0; j<ylen; ++j) {
+      x[j] = Xmat(j,i);
+      xCopy[j] = Xmat(j,i);
+      index[j] = j;
+      qd[j] = 0.0;
+    }
     cut = quant = minQad = 0.0;
-
-    getQad(Xmatcoli, y, qad, tau, minsize, cut, minQad, quant);
-
-    if(minQad < stemp) {
+    nleft = 0;
+    getQad(x, y, qd, tau, minsize, cut, minQad, quant, &nleft);
+    if((minQad < stemp) && (nleft > minSize)) {
       stemp = minQad;
       v = cut;
       indx = i;
-      cutRight = arma::find(Xmatcoli > cut);
-      cutLeft = arma::find(Xmatcoli <= cut);
+      cutLeft.resize(nleft);
+      cutRight.resize(ylen-nleft);
+      uint jLeft, jRight;
+      jLeft = jRight = 0;
+      for(uint ii=0; ii < nleft; ++ii) {
+	if(*(xCopy+ii) <= v) cutLeft(jLeft++) = ii;
+	else cutRight(jRight++) = ii;
+      }
     }
-
   }
 
-  if (((qad(0)-stemp) > (mindev*sroot)) &&
-      (cutLeft.n_elem >= minsize) &&
-      (cutRight.n_elem >= minsize))
+  if (((*(qd)-stemp) > (mindev*sroot)) &&
+      (cutLeft.n_elem >= minSize) && // Gauranteed! change this!
+      (cutRight.n_elem >= minSize))
   {
     output.li = indices.elem(cutLeft);
     output.ri = indices.elem(cutRight);
@@ -267,7 +277,7 @@ ourVector myfun(arma::uvec& indices,
     output.val = v;
     output.empty = false;
     output.quantile = quant;
-    output.sold = qad[0];
+    output.sold = qad(0);
     return output;
   }
   else {
