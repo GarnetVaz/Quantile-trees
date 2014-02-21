@@ -19,7 +19,7 @@ void getRightQad(double *y, double *qad, double tau, int ylen);
 
 void getQad(double *x,
 	    double *y,
-	    double *qad,
+	    double *qd,
 	    int *index,
 	    double tau,
 	    int minSize,
@@ -27,7 +27,7 @@ void getQad(double *x,
 	    double cut,
 	    double minQad,
 	    double quant,
-	    int &nleft) {
+	    int nleft) {
   R_qsort_I(x, index, 0, ylen);
   double *ypt, *qpt;
   ypt = y;
@@ -54,7 +54,7 @@ void getLeftQad(double *y,
 		double& quant) {
   minHeap low;
   maxHeap high;
-  double *ys, *qad;
+  double *ys, *qd;
   ys = y;
   qd = qad;
   double first = *ys;
@@ -130,7 +130,7 @@ void getRightQad(double *y,
 		 int ylen) {
   minHeap low;
   maxHeap high;
-  double *ys, *qad;
+  double *ys, *qd;
   ys = y;
   qd = qad;
   double *ypt = ys+ylen-1;
@@ -251,7 +251,7 @@ ourVector myfun(arma::uvec& indices,
     }
     cut = quant = minQad = 0.0;
     nleft = 0;
-    getQad(x, y, qd, tau, minsize, cut, minQad, quant, &nleft);
+    getQad(x, y, qd, index, tau, minSize, ylen, cut, minQad, quant, nleft);
     if((minQad < stemp) && (nleft > minSize)) {
       stemp = minQad;
       v = cut;
@@ -266,7 +266,7 @@ ourVector myfun(arma::uvec& indices,
       }
     }
   }
-
+  // *qd represents sold here.
   if (((*(qd)-stemp) > (mindev*sroot)) &&
       (cutLeft.n_elem >= minSize) && // Gauranteed! change this!
       (cutRight.n_elem >= minSize))
@@ -277,14 +277,17 @@ ourVector myfun(arma::uvec& indices,
     output.val = v;
     output.empty = false;
     output.quantile = quant;
-    output.sold = qad(0);
-    return output;
-  }
-  else {
+    output.sold = *qd;
+  } else {
     output.quantile = quant;
-    output.sold = qad(0);
-    return output;
+    output.sold = *qd;
   }
+  delete [] x;
+  delete [] xCopy;
+  delete [] y;
+  delete [] qd;
+  delete [] index;
+  return output;
 }
 
 void getQuantileAndQAD(const arma::vec& ys, double& quant, double& qad, const double tau) {
