@@ -74,13 +74,14 @@ void getLeftQad(const double *ys, double *qd,
 		double& quant) {
   minHeap low;
   maxHeap high;
-  double first = *ys;
+  double first = ys[0];
   low.push(first);
   double qp, qr; 	// Quantile based value here. Name might be misleading.
   qp = first;
   qr = 0.0;
-  *qd++ = 0.0;
-  *qd++ = 0.0;
+  qd[0] = qd[1] = 0.0;
+  // *qd++ = 0.0;
+  // *qd++ = 0.0;
   int nl, nr, nn;		// nn = total points, nl = points in left
   int nlold, nrold;
   nn = 1;
@@ -90,17 +91,18 @@ void getLeftQad(const double *ys, double *qd,
   double k, i, j, l;
   int test;			// Used to test a shift from one heap to another.
 
-  ys++;
-  for(unsigned int ii = 1; ii < ylen; ++ii, ys++, qd++) {
+  // ys++;
+  // qd is ahead of y by 2 values.
+  for(int ii = 1; ii < ylen; ++ii) {
     nlold = nl;
     nrold = nr;
     k = i = j = 0.;
-    if(*ys <= low.top()) {
-      low.push(*ys);
+    if(ys[ii] <= low.top()) {
+      low.push(ys[ii]);
       k = 1.;
       nl++;
     } else {
-      high.push(*ys);
+      high.push(ys[ii]);
       nr++;
     }
     ++nn;
@@ -131,8 +133,8 @@ void getLeftQad(const double *ys, double *qd,
     qr = low.top() + (high.top()-low.top())*(tau*((double)nn -1.) -((double)test-1.));
 
     // Get new QAD from old one.
-    *qd = *(qd-1) + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
-      + i*j*(l-qr) + k*(tau-1.)*(*ys-qr) + (1.-k)*tau*(*ys-qr);
+    qd[ii+2] = qd[ii+1] + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
+      + i*j*(l-qr) + k*(tau-1.)*(ys[ii]-qr) + (1.-k)*tau*(ys[ii]-qr);
 
     // Do updates
     qp = qr;
