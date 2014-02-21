@@ -25,7 +25,7 @@
 #include<vector>
 #include<functional>
 #include<cmath>
-
+#include<iostream>
 using namespace std;
 
 typedef priority_queue< double, vector<double> > minHeap;
@@ -40,10 +40,10 @@ void getQad(double *x,
 	    double tau,
 	    int minSize,
 	    int ylen,
-	    double cut,
-	    double minQad,
-	    double quant,
-	    int nleft) {
+	    double &cut,
+	    double &minQad,
+	    double &quant,
+	    uint &nleft) {
   // Compute left and right qad's
   getLeftQad(y, qd, tau, ylen, quant);
   getRightQad(y, qd, tau, ylen);
@@ -266,8 +266,8 @@ ourVector myfun(arma::uvec& indices,
     R_qsort_I(x, index, 0, ylen);
     for(int m=0; m<ylen; ++m) ySort[m] = y[index[m]];
 
-    getQad(x, y, qd, tau, minSize, (int) ylen, cut, minQad, quant, nleft);
-    if((minQad < stemp) && (nleft > minSize)) {
+    getQad(x, ySort, qd, tau, minSize, (int) ylen, cut, minQad, quant, nleft);
+    if(minQad < stemp) {
       stemp = minQad;
       v = cut;
       indx = i;
@@ -276,13 +276,13 @@ ourVector myfun(arma::uvec& indices,
       uint jLeft, jRight;
       jLeft = jRight = 0;
       for(uint ii=0; ii < nleft; ++ii) {
-	if(*(xCopy+ii) <= v) cutLeft(jLeft++) = ii;
+	if(xCopy[ii] <= v) cutLeft(jLeft++) = ii;
 	else cutRight(jRight++) = ii;
       }
     }
   }
   // *qd represents sold here.
-  if (((*(qd)-stemp) > (mindev*sroot)) &&
+  if (((qd[0]-stemp) > (mindev*sroot)) &&
       (cutLeft.n_elem >= minSize) && // Gauranteed! change this!
       (cutRight.n_elem >= minSize))
   {
@@ -292,10 +292,12 @@ ourVector myfun(arma::uvec& indices,
     output.val = v;
     output.empty = false;
     output.quantile = quant;
-    output.sold = *qd;
+    output.sold = qd[0];
+    cout << "left is " << output.li << endl;
+    cout << "right is " << output.ri << endl;
   } else {
     output.quantile = quant;
-    output.sold = *qd;
+    output.sold = qd[0];
   }
   delete [] x;
   delete [] xCopy;
