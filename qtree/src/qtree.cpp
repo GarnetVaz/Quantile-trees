@@ -92,7 +92,7 @@ void getLeftQad(const double *ys, double *qd,
   int test;			// Used to test a shift from one heap to another.
 
   // ys++;
-  // qd is ahead of y by 2 values.
+  // qd is ahead of y by 1 value.
   for(int ii = 1; ii < ylen; ++ii) {
     nlold = nl;
     nrold = nr;
@@ -133,7 +133,7 @@ void getLeftQad(const double *ys, double *qd,
     qr = low.top() + (high.top()-low.top())*(tau*((double)nn -1.) -((double)test-1.));
 
     // Get new QAD from old one.
-    qd[ii+2] = qd[ii+1] + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
+    qd[ii+1] = qd[ii] + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
       + i*j*(l-qr) + k*(tau-1.)*(ys[ii]-qr) + (1.-k)*tau*(ys[ii]-qr);
 
     // Do updates
