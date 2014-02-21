@@ -1,3 +1,20 @@
+/*******************************************************************
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    Copyright (C) <2014>  <Garnet J. Vaz>
+*******************************************************************/
+
+/*
+  R based quantile tree code.
+*/
 #include "qtree.h"
 
 #include<Rmath.h>
@@ -20,7 +37,6 @@ void getRightQad(double *y, double *qad, double tau, int ylen);
 void getQad(double *x,
 	    double *y,
 	    double *qd,
-	    int *index,
 	    double tau,
 	    int minSize,
 	    int ylen,
@@ -28,7 +44,6 @@ void getQad(double *x,
 	    double minQad,
 	    double quant,
 	    int nleft) {
-  R_qsort_I(x, index, 0, ylen);
   double *ypt, *qpt;
   ypt = y;
   qpt = qd;
@@ -36,13 +51,13 @@ void getQad(double *x,
   getRightQad(ypt, qpt, tau, ylen);
   double min = *(qd+minSize);
   unsigned int minInd = minSize;
-  for(unsigned int i=minSize+1; i <= (ylen-minSize); ++i) {
-    if((*(qd+i) < min) && ((*(x+i-1) < *(x+i)))) {
-      min = *(qd+i);
+  for(int i=minSize+1; i <= (ylen-minSize); ++i) {
+    if((qd[i] < min) && (x[i-1] < x[i])) {
+      min = qd[i];
       minInd = i;
     }
   }
-  cut = 0.5*(*(x+minInd-1) + *(x+minInd));
+  cut = 0.5*(x[minInd-1] + x[minInd]);
   minQad = min;
   nleft = minInd;
 }
@@ -74,7 +89,7 @@ void getLeftQad(double *y,
   int test;			// Used to test a shift from one heap to another.
 
   ys++;
-  for(int ii = 1; ii < ylen; ++ii, ys++, qd++) {
+  for(int ii = 1; ii < ylen; ++ii, ++ys, ++qd) {
     nlold = nl;
     nrold = nr;
     k = i = j = 0.;
@@ -130,24 +145,22 @@ void getRightQad(double *y,
 		 int ylen) {
   minHeap low;
   maxHeap high;
-  double *ys, *qd;
+  double *ys, *qd, *ypt, *qpt;
+  double k, i, j, l, last;
+  int test;			// Used to test a shift from one heap to another.
+  double qadp, qadr, qp, qr;
+  int nl, nr, nn, nlold, nrold;
   ys = y;
   qd = qad;
-  double *ypt = ys+ylen-1;
-  double *qpt = qd+ylen+1;
-  double last = *ypt;
-  low.push(last);
-  double qp, qr;
+  ypt = ys+ylen-1;
+  qpt = qd+ylen+1;
+  last = ypt[0];
   qp = last;
   qr = 0.0;
-  int nlold, nrold;
-  int nl, nr, nn;
+  low.push(last);
   nn = 1;
   nlold = nl = 1;
   nrold = nr = 0;
-  double k, i, j, l;
-  int test;			// Used to test a shift from one heap to another.
-  double qadp, qadr;
   qadp = qadr = 0.0;
   qpt -= 3;
   ypt--;
@@ -213,10 +226,10 @@ ourVector myfun(arma::uvec& indices,
   output.empty = true;
   double stemp = sroot;
   unsigned int indx = 0;
-  unsigned int i, j;
+  uint i, j;
   double cut, minQad, quant;
   arma::uvec cutLeft, cutRight;
-  int nleft = 0;
+  uint nleft = 0;
   double v;
 
   // if(y.n_elem == 2) {
@@ -230,12 +243,14 @@ ourVector myfun(arma::uvec& indices,
   //   // cout << "used weird case" << endl;
   //   return output;
   // }
-  int ylen = yvals.n_elem;
+  uint ylen = yvals.n_elem;
   double *x = new double[ylen];
   double *xCopy = new double[ylen]; // Need to find cuts.
   double *y = new double[ylen];
+  double *ySort = new double[ylen];
   double *qd = new double[ylen+1];
   int *index = new int[ylen];
+
 
   // Copy y values over to array.
   for(i=0; i<ylen; ++i) y[i] = yvals(i);
@@ -251,7 +266,10 @@ ourVector myfun(arma::uvec& indices,
     }
     cut = quant = minQad = 0.0;
     nleft = 0;
-    getQad(x, y, qd, index, tau, minSize, ylen, cut, minQad, quant, nleft);
+    R_qsort_I(x, index, 0, ylen);
+    for(int m=0; m<ylen; ++m) ySort[m] = y[index[m]];
+
+    getQad(x, y, qd, tau, minSize, (int) ylen, cut, minQad, quant, nleft);
     if((minQad < stemp) && (nleft > minSize)) {
       stemp = minQad;
       v = cut;
@@ -285,6 +303,7 @@ ourVector myfun(arma::uvec& indices,
   delete [] x;
   delete [] xCopy;
   delete [] y;
+  delete [] ySort;
   delete [] qd;
   delete [] index;
   return output;
