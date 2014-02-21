@@ -1,4 +1,4 @@
-/*    
+/*******************************************************************
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -8,10 +8,13 @@
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
-    Copyright (C) <2014>  <Garnet J. Vaz>
-*/
 
+    Copyright (C) <2014>  <Garnet J. Vaz>
+*******************************************************************/
+
+/*
+  Armadillo based quantile tree code.
+*/
 #include "qtree.h"
 
 #include<algorithm>
