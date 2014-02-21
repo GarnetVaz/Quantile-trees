@@ -44,11 +44,9 @@ void getQad(double *x,
 	    double minQad,
 	    double quant,
 	    int nleft) {
-  double *ypt, *qpt;
-  ypt = y;
-  qpt = qd;
-  getLeftQad(ypt, qpt, tau, ylen, quant);
-  getRightQad(ypt, qpt, tau, ylen);
+  // Compute left and right qad's
+  getLeftQad(y, qd, tau, ylen, quant);
+  getRightQad(y, qd, tau, ylen);
   double min = *(qd+minSize);
   unsigned int minInd = minSize;
   for(int i=minSize+1; i <= (ylen-minSize); ++i) {
