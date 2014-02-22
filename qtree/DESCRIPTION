@@ -7,5 +7,5 @@ Author: Garnet Vaz, Harish Bhat, Nitesh Kumar
 Maintainer: Garnet Vaz <gvaz@ucmerced.edu>
 Description: Ordinary regression trees use the mean squared error loss function.The qtree package uses the tilted absolute value loss function (a specific case is the LAD trees) with the same speed as that of regular trees.
 License: GPL 3.0
-Depends: Rcpp (>= 0.10.6) , RcppArmadillo (>= 0.4.000.2)
+Depends: Rcpp (>= 0.10.6)
 LinkingTo: Rcpp

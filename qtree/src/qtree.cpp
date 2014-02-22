@@ -26,7 +26,6 @@
 #include<functional>
 #include<cmath>
 #include<iostream>
-using namespace std;
 
 typedef priority_queue< double, vector<double> > minHeap;
 typedef priority_queue< double, vector<double>, std::greater<double> > maxHeap;
@@ -38,18 +37,18 @@ void getQad(double *x,
 	    double *y,
 	    double *qd,
 	    double tau,
-	    int minSize,
+	    int minCut,
 	    int ylen,
 	    double &cut,
 	    double &minQad,
 	    double &quant,
-	    uint &nleft) {
+	    int &nleft) {
   // Compute left and right qad's
   getLeftQad(y, qd, tau, ylen, quant);
   getRightQad(y, qd, tau, ylen);
-  double min = *(qd+minSize);
-  unsigned int minInd = minSize;
-  for(int i=minSize+1; i <= (ylen-minSize); ++i) {
+  double min = *(qd+minCut);
+  unsigned int minInd = minCut;
+  for(int i=minCut+1; i <= (ylen-minCut); ++i) {
     if((qd[i] < min) && (x[i-1] < x[i])) {
       min = qd[i];
       minInd = i;
@@ -211,24 +210,27 @@ void getRightQad(double *y,
   }
 }
 
-ourVector myfun(arma::uvec& indices,
-			 arma::vec& yvals,
-			 arma::mat& Xmat,
-			 double sroot,
-			 double mindev,
-			 double minSize,
-			 double tau)
+nodeStruct splitNode(vector< unsigned int>& indices,
+		     NumericVector& yvals,
+		     NumericMatrix& Xmat,
+		     double sroot,
+		     double mindev,
+		     double minCut,
+		     double tau)
 {
-  ourVector output;
+  unsigned int nNode = indices.size();
+  unsigned int nPredictors = Xmat.ncol();
+  nodeStruct output;
   output.empty = true;
   double stemp = sroot;
-  unsigned int indx = 0;
-  uint i, j;
+  unsigned int indx, ui, uj;
+  indx = 0;
+  // int i, j;
   double cut, minQad, quant;
-  arma::uvec cutLeft, cutRight;
-  uint nleft = 0;
-  double v;
+  vector<unsigned int> cutLeft, cutRight;
+  int nLeft = 0;
 
+  // If there are only two points we might need this.
   // if(y.n_elem == 2) {
   //   output.li = Xmat.at(0,0) < Xmat.at(0,1) ? 0 : 1;
   //   output.ri = Xmat.at(0,0) < Xmat.at(0,1) ? 1 : 0;
@@ -240,61 +242,60 @@ ourVector myfun(arma::uvec& indices,
   //   // cout << "used weird case" << endl;
   //   return output;
   // }
-  uint ylen = yvals.n_elem;
-  double *x = new double[ylen];
-  double *xCopy = new double[ylen]; // Need to find cuts.
-  double *y = new double[ylen];
-  double *ySort = new double[ylen];
-  double *qd = new double[ylen+1];
-  int *index = new int[ylen];
+
+  double *x = new double[nNode];
+  double *xCopy = new double[nNode]; // Need to find cuts.
+  double *y = new double[nNode];
+  double *ySort = new double[nNode];
+  double *qd = new double[nNode+1];
+  int *index = new int[nNode];
 
 
   // Copy y values over to array.
-  for(i=0; i<ylen; ++i) y[i] = yvals(i);
+  for(ui=0; ui<nNode; ++ui) y[ui] = yvals(indices[ui]);
 
   // Start loop over every column
-  for (i=0; i<Xmat.n_cols; i++)  {
+  for (ui=0; ui<nPredictors; ++ui)  {
     // Initialize values for i'th column
-    for(j=0; j<ylen; ++j) {
-      x[j] = Xmat(j,i);
-      xCopy[j] = Xmat(j,i);
-      index[j] = j;
-      qd[j] = 0.0;
+    for(uj=0; uj<nNode; ++uj) {
+      x[uj] = Xmat(uj,ui);
+      xCopy[uj] = Xmat(uj,ui);
+      index[uj] = uj;
+      qd[uj] = 0.0;
     }
     cut = quant = minQad = 0.0;
-    nleft = 0;
-    R_qsort_I(x, index, 0, ylen);
-    for(int m=0; m<ylen; ++m) ySort[m] = y[index[m]];
+    nLeft = 0;
+    R_qsort_I(x, index, 0, nNode);
+    for(unsigned int um=0; um<nNode; ++um) ySort[um] = y[index[um]];
 
-    getQad(x, ySort, qd, tau, minSize, (int) ylen, cut, minQad, quant, nleft);
+    getQad(x, ySort, qd, tau, minCut, nNode, cut, minQad, quant, nLeft);
+
     if(minQad < stemp) {
       stemp = minQad;
-      v = cut;
-      indx = i;
-      cutLeft.resize(nleft);
-      cutRight.resize(ylen-nleft);
-      uint jLeft, jRight;
+      indx = ui;
+      cutLeft.resize(nLeft);
+      cutRight.resize(nNode-nLeft);
+      unsigned int jLeft, jRight;
       jLeft = jRight = 0;
-      for(uint ii=0; ii < nleft; ++ii) {
-	if(xCopy[ii] <= v) cutLeft(jLeft++) = ii;
-	else cutRight(jRight++) = ii;
+      for(unsigned int ii=0; ii < nNode; ++ii) {
+	if(xCopy[ii] <= cut) cutLeft[jLeft++] = ii;
+	else cutRight[jRight++] = ii;
       }
     }
   }
-  // *qd represents sold here.
-  if (((qd[0]-stemp) > (mindev*sroot)) &&
-      (cutLeft.n_elem >= minSize) && // Gauranteed! change this!
-      (cutRight.n_elem >= minSize))
+
+  // qd[0] represents sold here.
+  if ((qd[0]-stemp) > (mindev*sroot))
   {
-    output.li = indices.elem(cutLeft);
-    output.ri = indices.elem(cutRight);
+    output.li.resize(nLeft);
+    for(ui=0; ui<nLeft; ++ui) output.li[ui] = indices[cutLeft[ui]];
+    output.ri.resize(nNode-nLeft);
+    for(ui=0; ui<nNode-nLeft; ++ui) output.ri[ui] = indices[cutRight[ui]];
     output.i = indx;
-    output.val = v;
+    output.val = cut;
     output.empty = false;
     output.quantile = quant;
     output.sold = qd[0];
-    cout << "left is " << output.li << endl;
-    cout << "right is " << output.ri << endl;
   } else {
     output.quantile = quant;
     output.sold = qd[0];
@@ -308,73 +309,65 @@ ourVector myfun(arma::uvec& indices,
   return output;
 }
 
-void getQuantileAndQAD(const arma::vec& ys, double& quant, double& qad, const double tau) {
-  if(ys.n_elem == 1) {
+void getQuantileAndQAD(const NumericVector& ys, double& quant, double& qad, const double tau) {
+  int size = ys.size();
+  if(size == 1) {
     qad = 0.0;
     quant = ys(0);
     return;
   }
-  arma::vec sorty = arma::sort(ys);
-  unsigned int size = sorty.n_elem;
-  qad = 0.0;
   int low = ceil((size-1)*tau);
-  quant = sorty(low-1) + (sorty(low)-sorty(low-1))*(tau*((double)size -1.) -(low-1.));
+  std::partial_sort(ys.begin(),ys.begin()+low+1,ys.end());
+  quant = ys(low-1) + (ys(low)-ys(low-1))*(tau*(size -1.) -(low-1.));
   qad = 0.0;
-
-  for(arma::vec::const_iterator it=ys.begin(); it!= ys.end(); ++it) {
+  for(NumericVector::iterator it=ys.begin(); it!= ys.end(); ++it) {
     if(*it < quant) qad += (tau-1.)*(*it-quant);
     else qad += tau*(*it-quant);
   }
-
 }
 
-SEXP qtreeCPP(SEXP s_mypred,
-                  SEXP s_myresp,
-                  SEXP s_mindev,
-                  SEXP s_mincut,
-                  SEXP s_minsize,
-                  SEXP s_mytau)
+List qtreeCPP(NumericMatrix pred,
+	      NumericVector resp,
+	      double minDev,
+	      int minCut,
+	      int minSize,
+	      double tau)
 {
-  Rcpp::NumericMatrix rs_mypred(s_mypred);
-  arma::mat mypred(rs_mypred.begin(), rs_mypred.nrow(), rs_mypred.ncol(), false);
-
-  Rcpp::NumericVector rs_myresp(s_myresp);
-  arma::vec myresp(rs_myresp.begin(), rs_myresp.size(), false);
-
-  double mindev = Rcpp::as<double>(s_mindev);
-  double mincut = Rcpp::as<double>(s_mincut);
-  double minsize = Rcpp::as<double>(s_minsize);
-  double mytau = Rcpp::as<double>(s_mytau);
-  arma::vec yhat(myresp.n_elem); // Predicted value for each training point.
-  arma::uvec indices;
+  unsigned int nSamples = pred.nrow();
+  unsigned int nPredictors = pred.ncol();
+  vector<double> yhat(nSamples);
+  vector<unsigned int> indices;
   double sroot, sold;
   vector<string> xlevels, var;
   vector<double> val;
   vector<double> dev;
   vector<double>  yval;
-  vector< arma::uvec > activelist;
+  vector< vector<unsigned int> > activelist;
   vector< vector<int> > leaflist;
   vector<int> nodeID, nodeIDList;
   vector<int> n, valguide;
   string s1;
-  unsigned int i;
-  ourVector splitout;
-
+  unsigned int ui;
+  int i;
   double quant;
-  getQuantileAndQAD(myresp, quant, sroot, mytau);
-  yhat.fill(quant);
+  nodeStruct splitOut;
+
+  getQuantileAndQAD(resp, quant, sroot, tau);
+  yhat.assign(yhat.size(), quant);
+  // Need to move this stuff to R.
   xlevels.push_back("<leaf>");
-  for (i=0; i<mypred.n_cols; i++)
+  for (ui=0; ui<nPredictors; ui++)
   {
     s1 = "X";
     stringstream tempstream;
-    tempstream << (i+1);
+    tempstream << (ui+1);
     s1 += tempstream.str();
     xlevels.push_back(s1);
   }
 
-  // arma::uvec allcols = arma::linspace<arma::uvec>(0,mypred.n_cols);
-  indices = arma::linspace<arma::uvec>(0, (mypred.n_rows-1), mypred.n_rows);
+  indices.reserve(nSamples);
+  vector<unsigned int>::iterator it = indices.begin();
+  for(ui=0; ui<nSamples; ++ui) *it++ = ui;
   activelist.push_back(indices);
   nodeIDList.push_back(1);
 
@@ -382,18 +375,19 @@ SEXP qtreeCPP(SEXP s_mypred,
   {
     // indices of 1st node in active list
     indices = activelist[0];
-
-    arma::vec yvec = myresp.elem(indices);
+    unsigned int nNode = indices.size();
 
     // check if we do not need to split current partition at all
-    if (indices.n_elem <= mincut)
+    if (nNode <= (unsigned int) minSize)
     {
-      getQuantileAndQAD(yvec, quant, sold, mytau);
+      NumericVector yvec(nNode);
+      for(ui=0; ui<nNode; ++ui) yvec(ui) = resp(indices[ui]);
+      getQuantileAndQAD(yvec, quant, sold, tau);
       yval.push_back(quant);
       nodeID.push_back(nodeIDList[0]);
-      n.push_back(indices.size());
+      n.push_back(nNode);
       dev.push_back(sold);
-      (yhat.elem(indices)).fill(quant);
+      for(ui=0; ui<nNode; ++ui) yhat[ui] = quant;
       leaflist.push_back(vector<int>(indices.begin(),indices.end()));
 
       // delete this node from the list of active nodes
@@ -405,31 +399,30 @@ SEXP qtreeCPP(SEXP s_mypred,
     }
     else
     {
-      arma::mat Xmat = mypred.rows(indices);
-      splitout = myfun(indices, yvec, Xmat, sroot, mindev, minsize, mytau);
-      (yhat.elem(indices)).fill(splitout.quantile);
-      dev.push_back(splitout.sold);
-      if (! splitout.empty)
+      splitOut = splitNode(indices, resp, pred, sroot, minDev, minCut, tau);
+      for(ui=0; ui<nNode; ++ui) yhat[ui] = splitOut.quantile;
+      dev.push_back(splitOut.sold);
+      if (! splitOut.empty)
       {
         activelist.erase(activelist.begin());
 	nodeID.push_back(nodeIDList[0]);
 	unsigned int nodeNum = nodeIDList[0];
         nodeIDList.erase(nodeIDList.begin());
-        activelist.insert(activelist.begin(), 1, splitout.ri);
+        activelist.insert(activelist.begin(), 1, splitOut.ri);
         nodeIDList.insert(nodeIDList.begin(), 1, 2*nodeNum+1);
-        activelist.insert(activelist.begin(), 1, splitout.li);
+        activelist.insert(activelist.begin(), 1, splitOut.li);
         nodeIDList.insert(nodeIDList.begin(), 1, 2*nodeNum);
-        var.push_back(xlevels[(splitout.i)+1]);
-        val.push_back(splitout.val);
+        var.push_back(xlevels[(splitOut.i)+1]);
+        val.push_back(splitOut.val);
         valguide.push_back(1);    // 1 is for full
-	n.push_back(indices.size());
-	yval.push_back(splitout.quantile);
+	n.push_back(nNode);
+	yval.push_back(splitOut.quantile);
       }
       else
       {
-	yval.push_back(splitout.quantile);
+	yval.push_back(splitOut.quantile);
 	nodeID.push_back(nodeIDList[0]);
-	n.push_back(indices.size());
+	n.push_back(nNode);
 	leaflist.push_back(vector<int>(indices.begin(),indices.end()));
 	activelist.erase(activelist.begin());
 	nodeIDList.erase(nodeIDList.begin());
