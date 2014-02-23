@@ -41,12 +41,11 @@ void getQad(double *x,
 	    int ylen,
 	    double &cut,
 	    double &minQad,
-	    double &quant,
-	    int &nleft) {
+	    double &quant) {
   // Compute left and right qad's
   getLeftQad(y, qd, tau, ylen, quant);
   getRightQad(y, qd, tau, ylen);
-  double min = *(qd+minCut);
+  double min = qd[minCut];
   unsigned int minInd = minCut;
   for(int i=minCut+1; i <= (ylen-minCut); ++i) {
     if((qd[i] < min) && (x[i-1] < x[i])) {
@@ -56,7 +55,6 @@ void getQad(double *x,
   }
   cut = 0.5*(x[minInd-1] + x[minInd]);
   minQad = min;
-  nleft = minInd;
 }
 
 void getLeftQad(double *y,
@@ -228,7 +226,7 @@ nodeStruct splitNode(vector< unsigned int>& indices,
   // int i, j;
   double cut, minQad, quant;
   vector<unsigned int> cutLeft, cutRight;
-  int nLeft = 0;
+  unsigned int nLeft = 0;
 
   // If there are only two points we might need this.
   // if(y.n_elem == 2) {
@@ -264,23 +262,23 @@ nodeStruct splitNode(vector< unsigned int>& indices,
       qd[uj] = 0.0;
     }
     cut = quant = minQad = 0.0;
-    nLeft = 0;
     R_qsort_I(x, index, 0, nNode);
     for(unsigned int um=0; um<nNode; ++um) ySort[um] = y[index[um]];
 
-    getQad(x, ySort, qd, tau, minCut, nNode, cut, minQad, quant, nLeft);
+    getQad(x, ySort, qd, tau, minCut, nNode, cut, minQad, quant);
 
     if(minQad < stemp) {
       stemp = minQad;
       indx = ui;
-      cutLeft.resize(nLeft);
-      cutRight.resize(nNode-nLeft);
       unsigned int jLeft, jRight;
       jLeft = jRight = 0;
       for(unsigned int ii=0; ii < nNode; ++ii) {
-	if(xCopy[ii] <= cut) cutLeft[jLeft++] = ii;
-	else cutRight[jRight++] = ii;
+	if(xCopy[ii] <= cut)  {
+	  cutLeft.push_back(ii);
+	  jLeft++;
+	} else cutRight.push_back(ii);
       }
+      nLeft = jLeft;
     }
   }
 
@@ -290,7 +288,7 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     output.li.resize(nLeft);
     for(ui=0; ui<nLeft; ++ui) output.li[ui] = indices[cutLeft[ui]];
     output.ri.resize(nNode-nLeft);
-    for(ui=0; ui<nNode-nLeft-1; ++ui) output.ri[ui] = indices[cutRight[ui]];
+    for(ui=0; ui<nNode-nLeft; ++ui) output.ri[ui] = indices[cutRight[ui]];
     output.i = indx;
     output.val = cut;
     output.empty = false;
@@ -344,12 +342,11 @@ List qtreeCPP(NumericMatrix pred,
   vector<double> dev;
   vector<double>  yval;
   vector< vector<unsigned int> > activelist;
-  vector< vector<int> > leaflist;
+  vector< vector<unsigned int> > leaflist;
   vector<int> nodeID, nodeIDList;
   vector<int> n, valguide;
   string s1;
   unsigned int ui;
-  int i;
   double quant;
   nodeStruct splitOut;
 
@@ -388,7 +385,7 @@ List qtreeCPP(NumericMatrix pred,
       n.push_back(nNode);
       dev.push_back(sold);
       for(ui=0; ui<nNode; ++ui) yhat[ui] = quant;
-      leaflist.push_back(vector<int>(indices.begin(),indices.end()));
+      leaflist.push_back(indices);
 
       // delete this node from the list of active nodes
       activelist.erase(activelist.begin());
@@ -423,7 +420,7 @@ List qtreeCPP(NumericMatrix pred,
 	yval.push_back(splitOut.quantile);
 	nodeID.push_back(nodeIDList[0]);
 	n.push_back(nNode);
-	leaflist.push_back(vector<int>(indices.begin(),indices.end()));
+	leaflist.push_back(indices);
 	activelist.erase(activelist.begin());
 	nodeIDList.erase(nodeIDList.begin());
 	var.push_back(xlevels[0]);

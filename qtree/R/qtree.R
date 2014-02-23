@@ -90,7 +90,6 @@ qtree <- function (formula,
             indices = leaflist[[i]] + 1
             mywhere[indices] = varleaf[i]
         }
-        browser()
         names(mywhere) = c(1:length(Y))
         otree = list(frame = mydataframe, where = mywhere, terms = Terms,
 			call = CALL)
