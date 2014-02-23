@@ -14,7 +14,7 @@ y <- y + rnorm(5)
 
 data.simple <- data.frame(x1,x2,y)
 
-mod.data <- qtree(y ~ ., data = data.simple, tau = 0.5, minsize = 1, mincut = 2)
+mod.data <- qtree(y ~ ., data = data.simple, tau = 0.5, minsize = 2, mincut = 1)
 
 ## arma output:
 ## 1) root 5 9.1090 -0.6212

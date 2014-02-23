@@ -290,7 +290,7 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     output.li.resize(nLeft);
     for(ui=0; ui<nLeft; ++ui) output.li[ui] = indices[cutLeft[ui]];
     output.ri.resize(nNode-nLeft);
-    for(ui=0; ui<nNode-nLeft; ++ui) output.ri[ui] = indices[cutRight[ui]];
+    for(ui=0; ui<nNode-nLeft-1; ++ui) output.ri[ui] = indices[cutRight[ui]];
     output.i = indx;
     output.val = cut;
     output.empty = false;
@@ -326,6 +326,7 @@ void getQuantileAndQAD(const NumericVector& ys, double& quant, double& qad, cons
   }
 }
 
+// [[Rcpp::export]]
 List qtreeCPP(NumericMatrix pred,
 	      NumericVector resp,
 	      double minDev,
@@ -365,9 +366,8 @@ List qtreeCPP(NumericMatrix pred,
     xlevels.push_back(s1);
   }
 
-  indices.reserve(nSamples);
-  vector<unsigned int>::iterator it = indices.begin();
-  for(ui=0; ui<nSamples; ++ui) *it++ = ui;
+  indices.resize(nSamples);
+  for(ui=0; ui<nSamples; ++ui) indices[ui] = ui;
   activelist.push_back(indices);
   nodeIDList.push_back(1);
 

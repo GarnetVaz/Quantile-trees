@@ -14,13 +14,12 @@ struct nodeStruct {
   double sold;
 };
 
-// [[Rcpp::depends(RcppArmadillo)]]
 
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// RcppExport[[Rcpp::export]]
-List qtreeCPP(NumericMatrix, NumericVector, double, int, int, double);
+RcppExport SEXP qtreeCPP(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+/* List qtreeCPP(NumericMatrix, NumericVector, double, int, int, double); */
 
 
 #endif
