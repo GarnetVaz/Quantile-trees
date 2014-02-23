@@ -9,3 +9,4 @@ Description: Ordinary regression trees use the mean squared error loss function.
 License: GPL 3.0
 Depends: Rcpp (>= 0.10.6)
 LinkingTo: Rcpp
+Imports: Rcpp
