@@ -84,13 +84,14 @@ qtree <- function (formula,
         mydataframe$splits = splits
         rownames(mydataframe) = nodeID
         varleaf = which(var == "<leaf>")
-        where = integer()
+        mywhere = integer()
         for (i in c(1:length(varleaf))) {
             indices = leaflist[[i]] + 1
-            where[indices] = varleaf[i]
+            mywhere[indices] = varleaf[i]
         }
-        names(where) = c(1:length(Y))
-        otree = list(frame = mydataframe, where = where, terms = Terms,
+
+        names(mywhere) = c(1:length(Y))
+        otree = list(frame = mydataframe, where = mywhere, terms = Terms,
 			call = CALL)
         attr(otree$where, "names") <- row.names(m)
 	    if (length(n) > 1L)
