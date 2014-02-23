@@ -30,12 +30,17 @@
 typedef priority_queue< double, vector<double> > minHeap;
 typedef priority_queue< double, vector<double>, std::greater<double> > maxHeap;
 
-void getLeftQad(double *y, double *qad,	double tau, int ylen, double& quant);
-void getRightQad(double *y, double *qad, double tau, int ylen);
+void getLeftQad(const vector<double>& y, vector<double>& qad,
+		double tau, int ylen, double& quant);
+void getRightQad(const vector<double>& y, vector<double>& qad,
+		 double tau, int ylen);
 
-void getQad(double *x,
-	    double *y,
-	    double *qd,
+// void getLeftQad(double *y, double *qad,	double tau, int ylen, double& quant);
+// void getRightQad(double *y, double *qad, double tau, int ylen);
+
+void getQad(const vector<double>& x,
+	    const vector<double>& y,
+	    vector<double>& qad,
 	    double tau,
 	    int minCut,
 	    int ylen,
@@ -43,13 +48,13 @@ void getQad(double *x,
 	    double &minQad,
 	    double &quant) {
   // Compute left and right qad's
-  getLeftQad(y, qd, tau, ylen, quant);
-  getRightQad(y, qd, tau, ylen);
-  double min = qd[minCut];
+  getLeftQad(y, qad, tau, ylen, quant);
+  getRightQad(y, qad, tau, ylen);
+  double min = qad[minCut];
   unsigned int minInd = minCut;
   for(int i=minCut+1; i <= (ylen-minCut); ++i) {
-    if((qd[i] < min) && (x[i-1] < x[i])) {
-      min = qd[i];
+    if((qad[i] < min) && (x[i-1] < x[i])) {
+      min = qad[i];
       minInd = i;
     }
   }
@@ -57,28 +62,23 @@ void getQad(double *x,
   minQad = min;
 }
 
-void getLeftQad(double *y,
-		double *qad,
+void getLeftQad(const vector<double>& ys,
+		vector<double>& qad,
 		double tau,
 		int ylen,
 		double& quant) {
   minHeap low;
   maxHeap high;
-  double *ys, *qd;
-  ys = y;
-  qd = qad;
-  double first = ys[0];
-  low.push(first);
-  double qp, qr; 	// Quantile based value here. Name might be misleading.
-  qp = first;
-  qr = 0.0;
-  qd[0] = qd[1] = 0.0;
+  low.push(ys[0]);
   int nl, nr, nn;		// nn = total points, nl = points in left
   int nlold, nrold;
   nn = 1;
   nlold = nl = 1;
   nrold = nr = 0;
-
+  qad[0] = qad[1] = 0.0;
+  double qp, qr;
+  qr = 0.0;
+  qp = ys[0];
   double k, i, j, l;
   int test;			// Used to test a shift from one heap to another.
 
@@ -120,55 +120,44 @@ void getLeftQad(double *y,
     }
 
     // Compute the new median using linear interpolation
-    qr = low.top() + (high.top()-low.top())*(tau*((double)nn -1.) -((double)test-1.));
+    qr = low.top() + (high.top()-low.top())*(tau*(nn -1.) -(test-1.));
 
     // Get new QAD from old one.
-    qd[ii+1] = qd[ii] + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
+    qad[ii+1] = qad[ii] + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
       + i*j*(l-qr) + k*(tau-1.)*(ys[ii]-qr) + (1.-k)*tau*(ys[ii]-qr);
 
     // Do updates
     qp = qr;
   }
   quant = qr;			// Value of quantile with all points.
-
 }
 
-void getRightQad(double *y,
-		 double *qad,
+void getRightQad(const vector<double>& y,
+		 vector<double>& qad,
 		 double tau,
 		 int ylen) {
   minHeap low;
   maxHeap high;
-  double *ys, *qd, *ypt, *qpt;
-  double k, i, j, l, last;
+  double k, i, j, l;
   int test;			// Used to test a shift from one heap to another.
   double qadp, qadr, qp, qr;
   int nl, nr, nn, nlold, nrold;
-  ys = y;
-  qd = qad;
-  ypt = ys+ylen-1;
-  qpt = qd+ylen+1;
-  last = ypt[0];
-  qp = last;
-  qr = 0.0;
-  low.push(last);
+  low.push(y[ylen-1]);
   nn = 1;
   nlold = nl = 1;
   nrold = nr = 0;
   qadp = qadr = 0.0;
-  qpt -= 3;
-  ypt--;
-  for(int ii=ylen-1; ii > 0; --ii, --ypt, --qpt) {
+  for(int ii=ylen-2; ii > 0; --ii) {
     nlold = nl;
     nrold = nr;
     qadp = qadr;
     k = i = j = 0.;
-    if(*ypt <= low.top()) {
-      low.push(*ypt);
+    if(y[ii] <= low.top()) {
+      low.push(y[ii]);
       k = 1.;
       nl++;
     } else {
-      high.push(*ypt);
+      high.push(y[ii]);
       nr++;
     }
     ++nn;
@@ -196,12 +185,12 @@ void getRightQad(double *y,
     }
 
     // Compute the new median using linear interpolation
-    qr = low.top() + (high.top()-low.top())*(tau*((double)nn -1.) -((double)test-1.));
+    qr = low.top() + (high.top()-low.top())*(tau*(nn -1.) -(test-1.));
 
     // Get new QAD from old one.
     qadr = qadp + (qp - qr) * ((tau-1.)*nlold + tau*nrold) \
-      + i*j*(l-qr) + k*(tau-1.)*(*ypt-qr) + (1.-k)*tau*(*ypt-qr);
-    *qpt += qadr;
+      + i*j*(l-qr) + k*(tau-1.)*(y[ii]-qr) + (1.-k)*tau*(y[ii]-qr);
+    qad[ii] += qadr;
 
     // Do updates
     qp = qr;
@@ -241,12 +230,15 @@ nodeStruct splitNode(vector< unsigned int>& indices,
   //   return output;
   // }
 
-  double *x = new double[nNode];
-  double *xCopy = new double[nNode]; // Need to find cuts.
-  double *y = new double[nNode];
-  double *ySort = new double[nNode];
-  double *qd = new double[nNode+1];
-  int *index = new int[nNode];
+  vector<double> x(nNode), xCopy(nNode), y(nNode), ySort(nNode);
+  vector<double> qd(nNode+1);
+  vector<int> index(nNode);
+  // double *x = new double[nNode];
+  // double *xCopy = new double[nNode]; // Need to find cuts.
+  // double *y = new double[nNode];
+  // double *ySort = new double[nNode];
+  // double *qd = new double[nNode+1];
+  // int *index = new int[nNode];
 
 
   // Copy y values over to array.
@@ -262,7 +254,7 @@ nodeStruct splitNode(vector< unsigned int>& indices,
       qd[uj] = 0.0;
     }
     cut = quant = minQad = 0.0;
-    R_qsort_I(x, index, 0, nNode);
+    R_qsort_I(&x[0], &index[0], 0, nNode);
     for(unsigned int um=0; um<nNode; ++um) ySort[um] = y[index[um]];
 
     getQad(x, ySort, qd, tau, minCut, nNode, cut, minQad, quant);
@@ -298,12 +290,12 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     output.quantile = quant;
     output.sold = qd[0];
   }
-  delete [] x;
-  delete [] xCopy;
-  delete [] y;
-  delete [] ySort;
-  delete [] qd;
-  delete [] index;
+  // delete [] x;
+  // delete [] xCopy;
+  // delete [] y;
+  // delete [] ySort;
+  // delete [] qd;
+  // delete [] index;
   return output;
 }
 
