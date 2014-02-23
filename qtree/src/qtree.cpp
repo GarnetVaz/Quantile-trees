@@ -35,9 +35,6 @@ void getLeftQad(const vector<double>& y, vector<double>& qad,
 void getRightQad(const vector<double>& y, vector<double>& qad,
 		 double tau, int ylen);
 
-// void getLeftQad(double *y, double *qad,	double tau, int ylen, double& quant);
-// void getRightQad(double *y, double *qad, double tau, int ylen);
-
 void getQad(const vector<double>& x,
 	    const vector<double>& y,
 	    vector<double>& qad,
@@ -147,7 +144,7 @@ void getRightQad(const vector<double>& y,
   nlold = nl = 1;
   nrold = nr = 0;
   qadp = qadr = 0.0;
-  for(int ii=ylen-2; ii > 0; --ii) {
+  for(int ii=ylen-2; ii >= 0; --ii) {
     nlold = nl;
     nrold = nr;
     qadp = qadr;
@@ -233,17 +230,11 @@ nodeStruct splitNode(vector< unsigned int>& indices,
   vector<double> x(nNode), xCopy(nNode), y(nNode), ySort(nNode);
   vector<double> qd(nNode+1);
   vector<int> index(nNode);
-  // double *x = new double[nNode];
-  // double *xCopy = new double[nNode]; // Need to find cuts.
-  // double *y = new double[nNode];
-  // double *ySort = new double[nNode];
-  // double *qd = new double[nNode+1];
-  // int *index = new int[nNode];
 
-
-  // Copy y values over to array.
+  // Copy yvals at this node over to vector y.
   for(ui=0; ui<nNode; ++ui) y[ui] = yvals(indices[ui]);
-
+  cout << "yvals are " << endl;
+  for(int kk=0; kk<yvals.size(); ++kk) cout << yvals(kk) << endl;
   // Start loop over every column
   for (ui=0; ui<nPredictors; ++ui)  {
     // Initialize values for i'th column
@@ -306,9 +297,11 @@ void getQuantileAndQAD(const NumericVector& ys, double& quant, double& qad, cons
     quant = ys(0);
     return;
   }
+  vector<double> y(size);
+  for(int ui=0; ui < size; ++ui) y[ui] = ys[ui];
   int low = ceil((size-1)*tau);
-  std::partial_sort(ys.begin(),ys.begin()+low+1,ys.end());
-  quant = ys(low-1) + (ys(low)-ys(low-1))*(tau*(size -1.) -(low-1.));
+  std::partial_sort(y.begin(),y.begin()+low+1,y.end());
+  quant = y[low-1] + (y[low]-y[low-1])*(tau*(size -1.) -(low-1.));
   qad = 0.0;
   for(NumericVector::iterator it=ys.begin(); it!= ys.end(); ++it) {
     if(*it < quant) qad += (tau-1.)*(*it-quant);
