@@ -4,17 +4,6 @@
 #include<vector>
 using namespace std;
 
-struct nodeStruct {
-  vector<unsigned int> li;
-  vector<unsigned int> ri;
-  int i;
-  double val;
-  bool empty;
-  double quantile;
-  double sold;
-};
-
-
 #include <Rcpp.h>
 using namespace Rcpp;
 
