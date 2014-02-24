@@ -3,12 +3,15 @@ Quantile-trees
 
 R package implementation of decision trees using the absolute value loss function. (Supports LAD trees and other quantiles to extend linear Quantile Regression (http://en.wikipedia.org/wiki/Quantile_regression) to the tree framework)
 
+NOTE: development ongoing, will add a stable branch soon.
+
 This package provides an efficient implementation of LAD trees and the general case
 of any quantile using the tilted absolute value function. This current implementation
 has the same complexity as that of the 'tree' package in R.
 
 To install clone the repository and outside the qtree folder run 'R CMD INSTALL qtree'.
-
+These results are from the 08ff02d57d287de2c9fa68f6f6551cbd7a724894 commit which used
+armadillo.
 Run times of tree vs qtree(tau=0.5) on CT-slices (UCI) dataset (384 variables, default settings):
 
 N:
