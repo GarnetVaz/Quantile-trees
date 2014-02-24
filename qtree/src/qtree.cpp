@@ -236,8 +236,11 @@ void splitNode(vector< unsigned int>& indices,
     }
     cut = quant = minQad = 0.0;
     rsort_with_index(&x[0],&index[0],nNode);
-    // R_qsort_I(&x[0], &index[0], 0, nNode-1);
-    for(unsigned int um=0; um<nNode; ++um) ySort[um] = y[index[um]];
+    // R_qsort_I(&x[0], &index[0], 1, nNode);
+    for(unsigned int um=0; um<nNode; ++um) {
+      ySort[um] = y[index[um]];
+      x[um] = xCopy[index[um]];
+    }
 
     getQad(x, ySort, qd, tau, minCut, (int) nNode, cut, minQad, quant);
 
