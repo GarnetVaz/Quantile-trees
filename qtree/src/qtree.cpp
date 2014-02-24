@@ -131,8 +131,7 @@ void getLeftQad(const vector<double>& ys,
 
 void getRightQad(const vector<double>& y,
 		 vector<double>& qad,
-		 double tau,
-		 int ylen) {
+		 double tau, int ylen) {
   minHeap low;
   maxHeap high;
   double k, i, j, l;
@@ -195,41 +194,32 @@ void getRightQad(const vector<double>& y,
   }
 }
 
-nodeStruct splitNode(vector< unsigned int>& indices,
-		     NumericVector& yvals,
-		     NumericMatrix& Xmat,
-		     double sroot,
-		     double mindev,
-		     double minCut,
-		     double tau)
+void splitNode(vector< unsigned int>& indices,
+	       NumericVector yvals,
+	       NumericMatrix Xmat,
+	       vector< unsigned int>& left,
+	       vector< unsigned int>& right,
+	       double sroot,
+	       double mindev,
+	       double minCut,
+	       double &val,
+	       double &quantile,
+	       double &sold,
+	       bool &empty,
+	       unsigned int &indx,
+	       double tau)
 {
   unsigned int nNode = indices.size();
   unsigned int nPredictors = Xmat.ncol();
-  nodeStruct output;
-  output.empty = true;
   double stemp = sroot;
-  unsigned int indx, ui, uj;
-  indx = 0;
-  // int i, j;
+  unsigned int ui, uj;
   double cut, bestCut, minQad, quant;
-  vector<unsigned int> cutLeft, cutRight;
   unsigned int nLeft = 0;
   bestCut = cut = 0.0;
 
-  // If there are only two points we might need this.
-  // if(y.n_elem == 2) {
-  //   output.li = Xmat.at(0,0) < Xmat.at(0,1) ? 0 : 1;
-  //   output.ri = Xmat.at(0,0) < Xmat.at(0,1) ? 1 : 0;
-  //   output.i = 0;
-  //   output.val = 0.5*(Xmat.at(0,0) + Xmat(0,1));
-  //   output.empty = false;
-  //   output.quantile = y(0) + (y(1) - y(0))*(tau);
-  //   output.sold = 0.0;
-  //   // cout << "used weird case" << endl;
-  //   return output;
-  // }
-
   vector<double> x(nNode), xCopy(nNode), y(nNode), ySort(nNode);
+  vector<unsigned int> cutLeft, cutRight;
+  vector<unsigned int> leftTemp, rightTemp;
   vector<double> qd(nNode+1);
   vector<int> index(nNode);
 
@@ -241,15 +231,15 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     // Initialize values for i'th column
     for(uj=0; uj<nNode; ++uj) {
       x[uj] = xCopy[uj] = Xmat(indices[uj],ui);
-      // xCopy[uj] = Xmat(indices[uj],ui);
-      index[uj] = uj;
+      index[uj] = (int) uj;
       qd[uj] = 0.0;
     }
     cut = quant = minQad = 0.0;
-    R_qsort_I(&x[0], &index[0], 0, nNode);
+    rsort_with_index(&x[0],&index[0],nNode);
+    // R_qsort_I(&x[0], &index[0], 0, nNode-1);
     for(unsigned int um=0; um<nNode; ++um) ySort[um] = y[index[um]];
 
-    getQad(x, ySort, qd, tau, minCut, nNode, cut, minQad, quant);
+    getQad(x, ySort, qd, tau, minCut, (int) nNode, cut, minQad, quant);
 
     if(minQad < stemp) {
       stemp = minQad;
@@ -261,29 +251,35 @@ nodeStruct splitNode(vector< unsigned int>& indices,
 	if(xCopy[ii] <= bestCut)  {
 	  cutLeft.push_back(ii);
 	  jLeft++;
-	} else cutRight.push_back(ii);
+	} else {
+	  cutRight.push_back(ii);
+	}
       }
       nLeft = jLeft;
     }
   }
+  quantile = quant;
+  sold = qd[0];
 
   // qd[0] represents sold here.
-  if ((qd[0]-stemp) > (mindev*sroot))
+  if ((sold-stemp) > (mindev*sroot))
   {
-    output.li.resize(nLeft);
-    for(ui=0; ui<nLeft; ++ui) output.li[ui] = indices[cutLeft[ui]];
-    output.ri.resize(nNode-nLeft);
-    for(ui=0; ui<nNode-nLeft; ++ui) output.ri[ui] = indices[cutRight[ui]];
-    output.i = indx;
-    output.val = bestCut;
-    output.empty = false;
-    output.quantile = quant;
-    output.sold = qd[0];
-  } else {
-    output.quantile = quant;
-    output.sold = qd[0];
+    left.resize(nLeft);
+    right.resize(nNode-nLeft);
+    for(ui=0; ui<nLeft; ++ui) left[ui] = indices[cutLeft[ui]];
+    for(ui=0; ui<nNode-nLeft; ++ui) right[ui] = indices[cutRight[ui]];
+    // leftTemp.resize(nLeft);
+    // rightTemp.resize(nNode-nLeft);
+    // for(ui=0; ui<nLeft; ++ui) leftTemp[ui] = indices[cutLeft[ui]];
+    // for(ui=0; ui<nNode-nLeft; ++ui) rightTemp[ui] = indices[cutRight[ui]];
+    val = bestCut;
+    empty = false;
+    quantile = quant;
   }
-  return output;
+  // if(!empty) {
+  //   left = leftTemp;
+  //   right = rightTemp;
+  // }
 }
 
 void getQuantileAndQAD(const NumericVector& ys, double& quant, double& qad, const double tau) {
@@ -329,7 +325,6 @@ List qtreeCPP(NumericMatrix pred,
   string s1;
   unsigned int ui;
   double quant;
-  nodeStruct splitOut;
 
   getQuantileAndQAD(resp, quant, sroot, tau);
   yhat.assign(yhat.size(), quant);
@@ -377,28 +372,33 @@ List qtreeCPP(NumericMatrix pred,
     }
     else
     {
-      splitOut = splitNode(indices, resp, pred, sroot, minDev, minCut, tau);
-      for(ui=0; ui<nNode; ++ui) yhat[ui] = splitOut.quantile;
-      dev.push_back(splitOut.sold);
-      if (! splitOut.empty)
+      double value, quantile, sold;
+      bool empty = true;
+      unsigned int indx = 0;
+      vector<unsigned int> left, right;
+      value = quantile = sold = 0.0;
+      splitNode(indices, resp, pred, left, right, sroot, minDev, minCut, value, quantile, sold,	empty, indx, tau);
+      for(ui=0; ui<nNode; ++ui) yhat[ui] = quantile;
+      dev.push_back(sold);
+      if (!empty)
       {
-        activelist.erase(activelist.begin());
-	nodeID.push_back(nodeIDList[0]);
 	unsigned int nodeNum = nodeIDList[0];
+        activelist.erase(activelist.begin());
+	nodeID.push_back(nodeNum);
         nodeIDList.erase(nodeIDList.begin());
-        activelist.insert(activelist.begin(), 1, splitOut.ri);
+        activelist.insert(activelist.begin(), 1, right);
         nodeIDList.insert(nodeIDList.begin(), 1, 2*nodeNum+1);
-        activelist.insert(activelist.begin(), 1, splitOut.li);
+        activelist.insert(activelist.begin(), 1, left);
         nodeIDList.insert(nodeIDList.begin(), 1, 2*nodeNum);
-        var.push_back(xlevels[(splitOut.i)+1]);
-        val.push_back(splitOut.val);
+        var.push_back(xlevels[indx+1]);
+        val.push_back(value);
         valguide.push_back(1);    // 1 is for full
 	n.push_back(nNode);
-	yval.push_back(splitOut.quantile);
+	yval.push_back(quantile);
       }
       else
       {
-	yval.push_back(splitOut.quantile);
+	yval.push_back(quantile);
 	nodeID.push_back(nodeIDList[0]);
 	n.push_back(nNode);
 	leaflist.push_back(indices);
