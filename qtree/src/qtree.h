@@ -1,13 +1,12 @@
 #ifndef _QTREE_
 #define _QTREE_
 
-#include<Rcpp.h>
-#include<armadillo>
 #include<vector>
+using namespace std;
 
-struct ourVector {
-  arma::uvec li;
-  arma::uvec ri;
+struct nodeStruct {
+  vector<unsigned int> li;
+  vector<unsigned int> ri;
   int i;
   double val;
   bool empty;
@@ -15,8 +14,12 @@ struct ourVector {
   double sold;
 };
 
+
 #include <Rcpp.h>
+using namespace Rcpp;
+
 RcppExport SEXP qtreeCPP(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+/* List qtreeCPP(NumericMatrix, NumericVector, double, int, int, double); */
 
 
 #endif

@@ -1,9 +1,10 @@
 require('tree')                         # ensures that printing and prediction works.
+
 qtree <- function (formula,
                    data,
                    mindev=0.01,
-                   mincut=10,
-                   minsize=5,
+                   mincut=5,
+                   minsize=10,
                    tau=0.5,
                    na.action = na.pass,
                    model = FALSE,
@@ -40,8 +41,8 @@ qtree <- function (formula,
         Y[yna] <- 1
         w[yna] <- 0
     }
-    if (2*minsize > mincut) {
-        stop("minsize should be smaller than 1/2 of mincut")
+    if (2*mincut > minsize) {
+        stop("minsize should be atleast 2*mincut")
     }
     offset <- attr(Terms, "offset")
     if (!is.null(offset)) {
@@ -59,10 +60,7 @@ qtree <- function (formula,
 	nobs <- length(Y)
     if (nobs == 0L)
         stop("no observations from which to fit a model")
-
-	# define tuning parameters
-	mylist = .Call("qtreeCPP", X, Y, mindev, mincut,
-    minsize, tau, PACKAGE = "qtree")
+        mylist <- qtreeCPP(X,Y,mindev,mincut,minsize,tau)
 
 	ourtree = with(mylist, {
         splits = NULL
@@ -89,7 +87,6 @@ qtree <- function (formula,
             indices = leaflist[[i]] + 1
             mywhere[indices] = varleaf[i]
         }
-
         names(mywhere) = c(1:length(Y))
         otree = list(frame = mydataframe, where = mywhere, terms = Terms,
 			call = CALL)
