@@ -144,6 +144,7 @@ void getRightQad(const vector<double>& y,
   nlold = nl = 1;
   nrold = nr = 0;
   qadp = qadr = 0.0;
+  qp = y[ylen-1];
   for(int ii=ylen-2; ii >= 0; --ii) {
     nlold = nl;
     nrold = nr;
@@ -210,9 +211,10 @@ nodeStruct splitNode(vector< unsigned int>& indices,
   unsigned int indx, ui, uj;
   indx = 0;
   // int i, j;
-  double cut, minQad, quant;
+  double cut, bestCut, minQad, quant;
   vector<unsigned int> cutLeft, cutRight;
   unsigned int nLeft = 0;
+  bestCut = cut = 0.0;
 
   // If there are only two points we might need this.
   // if(y.n_elem == 2) {
@@ -233,14 +235,13 @@ nodeStruct splitNode(vector< unsigned int>& indices,
 
   // Copy yvals at this node over to vector y.
   for(ui=0; ui<nNode; ++ui) y[ui] = yvals(indices[ui]);
-  cout << "yvals are " << endl;
-  for(int kk=0; kk<yvals.size(); ++kk) cout << yvals(kk) << endl;
+
   // Start loop over every column
   for (ui=0; ui<nPredictors; ++ui)  {
     // Initialize values for i'th column
     for(uj=0; uj<nNode; ++uj) {
-      x[uj] = Xmat(uj,ui);
-      xCopy[uj] = Xmat(uj,ui);
+      x[uj] = xCopy[uj] = Xmat(indices[uj],ui);
+      // xCopy[uj] = Xmat(indices[uj],ui);
       index[uj] = uj;
       qd[uj] = 0.0;
     }
@@ -254,9 +255,10 @@ nodeStruct splitNode(vector< unsigned int>& indices,
       stemp = minQad;
       indx = ui;
       unsigned int jLeft, jRight;
+      bestCut = cut;
       jLeft = jRight = 0;
       for(unsigned int ii=0; ii < nNode; ++ii) {
-	if(xCopy[ii] <= cut)  {
+	if(xCopy[ii] <= bestCut)  {
 	  cutLeft.push_back(ii);
 	  jLeft++;
 	} else cutRight.push_back(ii);
@@ -273,7 +275,7 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     output.ri.resize(nNode-nLeft);
     for(ui=0; ui<nNode-nLeft; ++ui) output.ri[ui] = indices[cutRight[ui]];
     output.i = indx;
-    output.val = cut;
+    output.val = bestCut;
     output.empty = false;
     output.quantile = quant;
     output.sold = qd[0];
@@ -281,12 +283,6 @@ nodeStruct splitNode(vector< unsigned int>& indices,
     output.quantile = quant;
     output.sold = qd[0];
   }
-  // delete [] x;
-  // delete [] xCopy;
-  // delete [] y;
-  // delete [] ySort;
-  // delete [] qd;
-  // delete [] index;
   return output;
 }
 
@@ -360,7 +356,7 @@ List qtreeCPP(NumericMatrix pred,
     unsigned int nNode = indices.size();
 
     // check if we do not need to split current partition at all
-    if (nNode <= (unsigned int) minSize)
+    if (nNode < (unsigned int) minSize)
     {
       NumericVector yvec(nNode);
       for(ui=0; ui<nNode; ++ui) yvec(ui) = resp(indices[ui]);
