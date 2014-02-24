@@ -234,15 +234,21 @@ void splitNode(vector< unsigned int>& indices,
       index[uj] = (int) uj;
       qd[uj] = 0.0;
     }
-    cut = quant = minQad = 0.0;
     rsort_with_index(&x[0],&index[0],nNode);
     // R_qsort_I(&x[0], &index[0], 1, nNode);
     for(unsigned int um=0; um<nNode; ++um) {
       ySort[um] = y[index[um]];
       x[um] = xCopy[index[um]];
     }
-
-    getQad(x, ySort, qd, tau, minCut, (int) nNode, cut, minQad, quant);
+    cut = minQad = 0.0;
+    quant = x[0];
+    if(ySort[nNode-1] == ySort[0]) {
+      quant = x[0];
+      qd[0] = 0.0;
+      break;
+    } else {
+      getQad(x, ySort, qd, tau, minCut, (int) nNode, cut, minQad, quant);
+    }
 
     if(minQad < stemp) {
       stemp = minQad;
