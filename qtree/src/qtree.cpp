@@ -213,9 +213,9 @@ void splitNode(vector< unsigned int>& indices,
   unsigned int nPredictors = Xmat.ncol();
   double stemp = sroot;
   unsigned int ui, uj;
-  double cut, bestCut, minQad, quant;
+  double cut, bestCut, minQad, quant, bestQuant;
   unsigned int nLeft = 0;
-  bestCut = cut = 0.0;
+  bestCut = cut = bestQuant = 0.0;
 
   vector<double> x(nNode), xCopy(nNode), y(nNode), ySort(nNode);
   vector<unsigned int> cutLeft, cutRight;
@@ -236,14 +236,23 @@ void splitNode(vector< unsigned int>& indices,
     }
     rsort_with_index(&x[0],&index[0],nNode);
     // R_qsort_I(&x[0], &index[0], 1, nNode);
+    bool diff = false;		// used to test if node is pure
     for(unsigned int um=0; um<nNode; ++um) {
       ySort[um] = y[index[um]];
       x[um] = xCopy[index[um]];
     }
+    for(unsigned int um=1; um<nNode; ++um) {
+      if(y[um-1] != y[um]) {
+	diff = true;
+	break;
+      }
+    }
+
     cut = minQad = 0.0;
     quant = x[0];
-    if(ySort[nNode-1] == ySort[0]) {
-      quant = x[0];
+    // If node is pure
+    if(!diff) {
+      quant = y[0];
       qd[0] = 0.0;
       break;
     } else {
@@ -255,7 +264,10 @@ void splitNode(vector< unsigned int>& indices,
       indx = ui;
       unsigned int jLeft, jRight;
       bestCut = cut;
+      // bestQuant = quant;
       jLeft = jRight = 0;
+      cutLeft.clear();
+      cutRight.clear();
       for(unsigned int ii=0; ii < nNode; ++ii) {
 	if(xCopy[ii] <= bestCut)  {
 	  cutLeft.push_back(ii);
@@ -283,7 +295,6 @@ void splitNode(vector< unsigned int>& indices,
     // for(ui=0; ui<nNode-nLeft; ++ui) rightTemp[ui] = indices[cutRight[ui]];
     val = bestCut;
     empty = false;
-    quantile = quant;
   }
   // if(!empty) {
   //   left = leftTemp;
