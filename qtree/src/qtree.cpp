@@ -1,14 +1,22 @@
-#include "qtree.h"
-
+#include "RcppArmadillo.h"
 #include<algorithm>
 #include<queue>
 #include<iostream>
 #include<vector>
 #include<functional>
 #include<cmath>
-#include<iomanip>
 
 using namespace std;
+
+struct ourVector {
+  arma::uvec li;
+  arma::uvec ri;
+  int i;
+  double val;
+  bool empty;
+  double quantile;
+  double sold;
+};
 
 typedef priority_queue< double, vector<double> > minHeap;
 typedef priority_queue< double, vector<double>, std::greater<double> > maxHeap;
@@ -263,23 +271,11 @@ void getQuantileAndQAD(const arma::vec& ys, double& quant, double& qad, const do
 
 }
 
-SEXP qtreeCPP(SEXP s_mypred,
-                  SEXP s_myresp,
-                  SEXP s_mindev,
-                  SEXP s_mincut,
-                  SEXP s_minsize,
-                  SEXP s_mytau)
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+Rcpp::List qtreeCPP(arma::mat mypred, arma::vec myresp,
+		    double mindev, int mincut, int minsize, double mytau)
 {
-  Rcpp::NumericMatrix rs_mypred(s_mypred);
-  arma::mat mypred(rs_mypred.begin(), rs_mypred.nrow(), rs_mypred.ncol(), false);
-
-  Rcpp::NumericVector rs_myresp(s_myresp);
-  arma::vec myresp(rs_myresp.begin(), rs_myresp.size(), false);
-
-  double mindev = Rcpp::as<double>(s_mindev);
-  double mincut = Rcpp::as<double>(s_mincut);
-  double minsize = Rcpp::as<double>(s_minsize);
-  double mytau = Rcpp::as<double>(s_mytau);
   arma::vec yhat(myresp.n_elem); // Predicted value for each training point.
   arma::uvec indices;
   double sroot, sold;

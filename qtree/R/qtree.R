@@ -28,7 +28,7 @@ qtree <- function (formula,
         	stop("qtree cannot handle interaction terms")
 	}
 	if(any(lapply(m,class)=="factor"))
-		stop("qtree cannot handle categorical input yet!")
+		stop("qtree cannot handle categorical input! Convert categorical input to binary variables")
 	# extract response variable
     Y <- model.extract(m, "response")
     if (is.matrix(Y) && ncol(Y) > 1L)
@@ -61,8 +61,9 @@ qtree <- function (formula,
         stop("no observations from which to fit a model")
 
 	# define tuning parameters
-	mylist = .Call("qtreeCPP", X, Y, mindev, mincut,
-    minsize, tau, PACKAGE = "qtree")
+	mylist <- qtreeCPP(X,Y,mindev,mincut,minsize,tau)
+    ## 	mylist = .Call("qtreeCPP", X, Y, mindev, mincut,
+    ## minsize, tau, PACKAGE = "qtree")
 
 	ourtree = with(mylist, {
         splits = NULL
